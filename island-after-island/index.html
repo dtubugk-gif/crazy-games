@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#2a6b74">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>אי אחרי אי</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800;900&family=Secular+One&display=swap" rel="stylesheet">
+<style>
+/* Phone-first game UI: parchment + carved-wood controls over the 3D world; thumbs own the bottom corners, status owns the top. */
+:root{
+  --paper:#f7ecd6; --paper2:#ecdcbb; --paper3:#e2cfa8; --ink:#3a2615; --ink2:#6d4b2c;
+  --wood:#8b5a2b; --wood2:#5e3a19; --woodhi:#b47c45;
+  --leaf:#57952f; --leaf2:#356a1c; --leafhi:#7bb84a; --heart:#d8433b; --gold:#e3a83a; --gold2:#a8701c;
+  --shade:rgba(43,28,14,.84); --sea:#2a6b74;
+  --display:'Secular One','Rubik',system-ui,sans-serif; --ui:'Rubik',system-ui,sans-serif;
+  --lift:0 3px 0 rgba(58,38,21,.3), 0 8px 18px rgba(30,20,10,.22);
+  --sb: env(safe-area-inset-bottom, 0px); --st: env(safe-area-inset-top, 0px);
+  --sl: env(safe-area-inset-left, 0px); --sr: env(safe-area-inset-right, 0px);
+  color-scheme: light;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html{direction:rtl}
+html,body{margin:0; height:100%; overflow:hidden; background:var(--sea); color:var(--ink); font-family:var(--ui);
+  touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; overscroll-behavior:none}
+canvas#c{position:fixed; inset:0; width:100%; height:100%; display:block}
+button{font-family:inherit; cursor:pointer; color:inherit}
+button:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+.hidden{display:none !important}
+
+/* ================= top HUD ================= */
+#hud{position:fixed; inset:0; pointer-events:none; z-index:5}
+#top{position:absolute; top:calc(8px + var(--st)); left:calc(8px + var(--sl)); right:calc(8px + var(--sr)); display:flex; gap:8px; align-items:flex-start}
+#card{flex:1; min-width:0; max-width:520px; background:rgba(247,236,214,.95); border-radius:20px; box-shadow:var(--lift); padding:6px 8px 6px 10px}
+#row1{display:flex; align-items:center; gap:8px}
+#lvl{position:relative; width:42px; height:42px; flex:none}
+#lvl svg{position:absolute; inset:0; transform:rotate(-90deg)}
+#lvl .trk{fill:none; stroke:var(--paper3); stroke-width:5}
+#lvl .bar{fill:none; stroke:var(--leaf); stroke-width:5; stroke-linecap:round; transition:stroke-dashoffset .4s cubic-bezier(.2,.8,.2,1)}
+#lvlN{position:absolute; inset:6px; border-radius:50%; background:linear-gradient(var(--leafhi),var(--leaf2)); color:#fff8e6; display:grid; place-items:center;
+  font:900 15px/1 var(--ui); box-shadow:inset 0 2px 0 rgba(255,255,255,.3)}
+#lvl.up{animation:pop .5s}
+#hearts{display:flex; gap:1px; flex:1; min-width:0; flex-wrap:wrap}
+#hearts svg{width:23px; height:23px; filter:drop-shadow(0 1.5px 0 rgba(58,38,21,.25))}
+#hearts.hit svg{animation:shake .35s}
+#coins{display:flex; align-items:center; gap:4px; background:var(--paper2); border-radius:14px; padding:3px 9px 3px 5px; font:900 17px/1 var(--ui);
+  font-variant-numeric:tabular-nums; min-width:62px; justify-content:flex-start}
+#coins img{width:24px; height:24px}
+#coins.bump,.tile.bump{animation:pop .35s}
+#inv{display:flex; gap:4px; margin-top:5px; overflow:hidden; min-height:0}
+#inv:empty{display:none}
+.tile{position:relative; width:36px; height:34px; flex:none; background:var(--paper2); border-radius:10px; display:grid; place-items:center}
+.tile img{width:30px; height:30px}
+.tile b{position:absolute; bottom:-3px; left:-3px; min-width:18px; padding:1px 4px; border-radius:8px; background:var(--ink); color:#fff6e2;
+  font:800 11px/1.3 var(--ui); text-align:center; font-variant-numeric:tabular-nums}
+.iconBtn{pointer-events:auto; width:46px; height:46px; flex:none; border-radius:16px; border:none; background:rgba(247,236,214,.95); box-shadow:var(--lift);
+  display:grid; place-items:center; color:var(--ink)}
+.iconBtn svg{width:22px; height:22px}
+.iconBtn:active{transform:translateY(2px)}
+#quest{pointer-events:auto; position:absolute; top:calc(var(--st) + 8px + var(--cardh, 92px) + 6px); right:calc(8px + var(--sr)); max-width:min(78vw,460px);
+  display:flex; align-items:flex-start; gap:7px; background:var(--shade); color:#fff6e2; border:none; border-radius:14px; padding:7px 11px 7px 12px;
+  font:500 13.5px/1.35 var(--ui); text-align:right; box-shadow:0 6px 16px rgba(0,0,0,.2)}
+#quest svg{width:17px; height:17px; flex:none; margin-top:1px}
+#quest span{display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
+#quest.open span{-webkit-line-clamp:6}
+#quest b{color:#ffd77a; font-weight:800}
+#quest.done{animation:questdone 1s}
+@keyframes questdone{0%{background:rgba(70,130,40,.97); transform:scale(1.05)}100%{background:var(--shade)}}
+#pops{position:absolute; left:0; right:0; top:40%; display:flex; flex-direction:column; align-items:center; gap:4px}
+.pop{display:flex; align-items:center; gap:5px; background:rgba(247,236,214,.96); border-radius:14px; padding:3px 11px 3px 6px; font:800 15px/1.2 var(--ui);
+  box-shadow:0 3px 0 rgba(58,38,21,.25); animation:popin .22s ease-out, popout .45s ease-in 1.25s forwards}
+.pop img{width:24px; height:24px}
+.pop.warn{background:#f8d9cf; color:#8f1f19}
+@keyframes popin{from{transform:translateY(10px) scale(.8); opacity:0}}
+@keyframes popout{to{transform:translateY(-26px); opacity:0}}
+#banner{position:absolute; top:24%; left:0; right:0; text-align:center; pointer-events:none; padding:0 16px}
+#banner div{display:inline-block; font:400 clamp(34px,10vw,58px)/1.05 var(--display); color:#fff8e6; -webkit-text-stroke:2px rgba(58,38,21,.55); paint-order:stroke fill;
+  text-shadow:0 4px 0 rgba(58,38,21,.55), 0 12px 30px rgba(0,0,0,.25); animation:ban 2.6s forwards}
+#banner small{display:block; margin-top:6px; font:800 clamp(15px,4.2vw,20px)/1.2 var(--ui); -webkit-text-stroke:0; text-shadow:0 2px 3px rgba(0,0,0,.55)}
+@keyframes ban{0%{transform:scale(.6); opacity:0}12%{transform:scale(1.06); opacity:1}20%{transform:scale(1)}80%{opacity:1}100%{opacity:0; transform:translateY(-14px)}}
+@keyframes pop{50%{transform:scale(1.25)}}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+
+/* ================= thumb controls ================= */
+#controls{position:fixed; inset:0; pointer-events:none; z-index:6}
+#stickZone{position:absolute; left:0; bottom:0; width:56%; height:46%; pointer-events:auto}
+#stick{position:absolute; left:calc(28px + var(--sl) + 62px); bottom:calc(28px + var(--sb) + 62px); width:124px; height:124px; margin:0 0 -62px -62px;
+  border-radius:50%; background:radial-gradient(rgba(247,236,214,.10), rgba(247,236,214,.22)); border:3px solid rgba(247,236,214,.55);
+  transition:opacity .2s; opacity:.75}
+#stick.on{opacity:1; transition:none}
+#knob{position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px 0 0 -29px; border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, #fffaf0, var(--paper2)); box-shadow:0 3px 0 rgba(58,38,21,.3), 0 8px 16px rgba(0,0,0,.25)}
+#stickHint{position:absolute; left:50%; bottom:-24px; transform:translateX(-50%); white-space:nowrap; color:#fff8e6; font:700 12px/1 var(--ui);
+  text-shadow:0 1px 3px rgba(0,0,0,.7)}
+#btns{position:absolute; right:calc(14px + var(--sr)); bottom:calc(18px + var(--sb)); width:190px; height:190px; pointer-events:none}
+.cbtn{position:absolute; border:none; border-radius:50%; pointer-events:auto; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  color:#fff8e6; background:linear-gradient(var(--woodhi), var(--wood)); box-shadow:inset 0 3px 0 rgba(255,255,255,.25), 0 5px 0 var(--wood2), 0 10px 20px rgba(0,0,0,.28)}
+.cbtn.down{transform:translateY(4px); box-shadow:inset 0 3px 0 rgba(255,255,255,.25), 0 1px 0 var(--wood2)}
+.cbtn svg{width:46%; height:46%}
+.cbtn em{font:800 12px/1 var(--ui); font-style:normal; margin-top:2px; text-shadow:0 1px 0 rgba(0,0,0,.35)}
+#bAct{right:0; bottom:0; width:100px; height:100px; background:linear-gradient(var(--leafhi), var(--leaf)); box-shadow:inset 0 3px 0 rgba(255,255,255,.3), 0 6px 0 var(--leaf2), 0 12px 22px rgba(0,0,0,.28)}
+#actIco{display:block; width:46%; height:46%}
+#bAct #actIco svg{width:100%; height:100%; display:block}
+#bAct em{font-size:14px; margin-top:3px}
+#bAct.gold{background:linear-gradient(#f3c55e,#d39a2a); box-shadow:inset 0 3px 0 rgba(255,255,255,.35), 0 6px 0 #8f5f12, 0 12px 22px rgba(0,0,0,.28)}
+#bAct.ui{background:linear-gradient(#5aa7c4,#2f7f9c); box-shadow:inset 0 3px 0 rgba(255,255,255,.3), 0 6px 0 #1d5569, 0 12px 22px rgba(0,0,0,.28)}
+#bAct.gold.down,#bAct.ui.down,#bAct.down{transform:translateY(5px)}
+#bCraft{right:110px; bottom:2px; width:66px; height:66px}
+#bEat{right:14px; bottom:114px; width:58px; height:58px; background:linear-gradient(#e46a62,#b8342d); box-shadow:inset 0 3px 0 rgba(255,255,255,.3), 0 5px 0 #7d1f1a, 0 10px 18px rgba(0,0,0,.25)}
+#bEat i{position:absolute; top:-5px; left:-5px; min-width:22px; height:22px; padding:0 5px; border-radius:11px; background:var(--paper); color:var(--ink);
+  font:900 12px/22px var(--ui); font-style:normal; box-shadow:0 2px 0 rgba(58,38,21,.3)}
+#prompt{position:absolute; right:0; bottom:116px; width:max-content; max-width:min(230px,58vw); background:var(--paper); border-radius:14px;
+  padding:7px 12px; font:800 14.5px/1.3 var(--ui); box-shadow:var(--lift); pointer-events:none; text-align:center}
+#prompt:after{content:''; position:absolute; bottom:-8px; right:42px; border:8px solid transparent; border-bottom:0; border-top-color:var(--paper)}
+#bEat:not(.hidden) ~ #prompt{bottom:184px}
+#keys{position:absolute; left:calc(14px + var(--sl)); bottom:calc(14px + var(--sb)); color:#fff8e6; font:500 13px/1.4 var(--ui); text-shadow:0 1px 2px rgba(0,0,0,.6)}
+#keys kbd{background:rgba(247,236,214,.92); color:var(--ink); border-radius:6px; padding:1px 6px; font:800 12px var(--ui); box-shadow:0 2px 0 rgba(0,0,0,.25)}
+
+/* ================= sheets & panels ================= */
+.overlay{position:fixed; inset:0; z-index:20; display:flex; align-items:flex-end; justify-content:center; background:rgba(26,18,10,.42); padding:0}
+.panel{background:var(--paper); width:100%; max-width:560px; max-height:min(80vh,720px); display:flex; flex-direction:column; overflow:hidden;
+  border-radius:26px 26px 0 0; box-shadow:0 -6px 30px rgba(0,0,0,.3); padding-bottom:var(--sb); animation:sheet .3s cubic-bezier(.2,.9,.3,1)}
+.panel:before{content:''; display:block; width:44px; height:5px; border-radius:3px; background:var(--paper3); margin:9px auto 0}
+@keyframes sheet{from{transform:translateY(60%); opacity:.4}}
+.overlay.center{align-items:center; padding:16px}
+.overlay.center .panel{border-radius:26px; padding-bottom:0; animation:pin .3s cubic-bezier(.2,.9,.3,1.2)}
+.overlay.center .panel:before{display:none}
+@keyframes pin{from{transform:translateY(24px) scale(.94); opacity:0}}
+.phead{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 18px 8px}
+.phead h2{margin:0; font:400 25px/1.15 var(--display); text-wrap:balance}
+.close{width:42px; height:42px; flex:none; border-radius:14px; border:none; background:var(--paper2); color:var(--ink); font:900 22px/1 var(--ui)}
+.tabs{display:flex; gap:6px; padding:2px 16px 10px; overflow-x:auto; scrollbar-width:none}
+.tab{border:none; border-radius:14px; padding:10px 16px; font:800 15px/1 var(--ui); background:var(--paper2); color:var(--ink2); white-space:nowrap; flex:1}
+.tab.on{background:var(--wood); color:#fff8e6; box-shadow:0 3px 0 var(--wood2)}
+.plist{overflow-y:auto; padding:2px 14px 16px; display:flex; flex-direction:column; gap:9px; touch-action:pan-y; overscroll-behavior:contain}
+.card{background:#fffaf0; border-radius:18px; padding:10px; display:flex; align-items:center; gap:11px; box-shadow:0 2px 0 rgba(58,38,21,.12)}
+.card.dim{opacity:.62}
+.card img.ico{width:58px; height:58px; flex:none; background:var(--paper2); border-radius:15px; padding:3px}
+.card .txt{flex:1; min-width:0}
+.card .t{font:800 16.5px/1.2 var(--ui)}
+.card .d{font:500 13px/1.3 var(--ui); color:var(--ink2); margin-top:2px}
+.costs{display:flex; flex-wrap:wrap; gap:5px; margin-top:6px}
+.cost{display:flex; align-items:center; gap:2px; background:var(--paper2); border-radius:10px; padding:1px 7px 1px 3px; font:800 13.5px/1.5 var(--ui); font-variant-numeric:tabular-nums}
+.cost img{width:21px; height:21px}
+.cost.miss{background:#f8d9cf; color:#a1281f}
+.go{border:none; border-radius:16px; min-width:78px; min-height:50px; padding:0 14px; font:900 16px/1 var(--ui); color:#fff8e6;
+  background:linear-gradient(var(--leafhi),var(--leaf)); box-shadow:0 4px 0 var(--leaf2); flex:none}
+.go:disabled{background:#d6c7a6; box-shadow:0 4px 0 #b3a27f; color:#f8f0de}
+.go:active:not(:disabled){transform:translateY(3px); box-shadow:0 1px 0 var(--leaf2)}
+.go.gold{background:linear-gradient(#f3c55e,#d39a2a); box-shadow:0 4px 0 #8f5f12}
+.go.gold:disabled{background:#d6c7a6; box-shadow:0 4px 0 #b3a27f; color:#f8f0de}
+.go.wide{width:100%; min-height:56px; font-size:18px}
+.owned{font:900 14px/1 var(--ui); color:var(--leaf2); padding:0 8px}
+.perks{display:flex; flex-direction:column; gap:10px; padding:2px 14px 18px}
+.perk{border:none; text-align:right; background:#fffaf0; border-radius:18px; padding:14px 16px; box-shadow:0 4px 0 rgba(58,38,21,.18); display:flex; gap:12px; align-items:center}
+.perk .pi{width:46px; height:46px; flex:none; border-radius:14px; background:var(--paper2); display:grid; place-items:center; font:400 24px/1 var(--display); color:var(--leaf2)}
+.perk b{display:block; font:800 18px/1.2 var(--ui)}
+.perk span{font:500 14px/1.3 var(--ui); color:var(--ink2)}
+.perk small{margin-inline-start:auto; font:800 13px var(--ui); color:var(--leaf2)}
+.perk:active{transform:translateY(3px)}
+.pbody{padding:4px 16px 18px; display:flex; flex-direction:column; gap:10px}
+.pgrid{display:flex; flex-direction:column; min-height:0; overflow-y:auto} .pcol{padding-bottom:4px}
+.lead{font:500 15px/1.5 var(--ui); margin:0}
+.row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 18px; font:800 16px var(--ui)}
+.row input[type=range]{flex:1; max-width:230px; accent-color:var(--leaf); height:28px}
+.toggle{width:52px; height:30px; flex:none; border-radius:16px; border:none; background:var(--paper3); position:relative}
+.toggle:after{content:''; position:absolute; top:3px; right:3px; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:right .2s}
+.toggle.on{background:var(--leaf)} .toggle.on:after{right:25px}
+.stat{display:flex; justify-content:space-between; gap:12px; background:#fffaf0; border-radius:14px; padding:10px 14px; font:800 15px var(--ui)}
+.stat span:last-child{text-align:left}
+.big{border:none; border-radius:20px; padding:16px; font:400 25px/1 var(--display); color:#fff8e6; background:linear-gradient(var(--leafhi),var(--leaf));
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.3), 0 6px 0 var(--leaf2), 0 16px 30px rgba(0,0,0,.3)}
+.big.sec{background:linear-gradient(var(--paper),var(--paper2)); color:var(--ink); box-shadow:0 6px 0 #b9a47c, 0 14px 26px rgba(0,0,0,.22); font:800 17px/1 var(--ui); padding:14px}
+.big:active{transform:translateY(4px)}
+
+/* ================= title ================= */
+#title{position:fixed; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+  padding:0 max(20px, var(--sr)) calc(28px + var(--sb)) max(20px, var(--sl)); background:linear-gradient(to bottom, rgba(42,107,116,0) 45%, rgba(26,22,14,.6))}
+#logo{position:absolute; top:calc(8vh + var(--st)); left:16px; right:16px; text-align:center}
+#logo h1{margin:0; font:400 clamp(60px,18vw,112px)/.95 var(--display); color:#fff8e6; -webkit-text-stroke:4px #3a2615; paint-order:stroke fill;
+  text-shadow:0 7px 0 #3a2615, 0 18px 40px rgba(0,0,0,.3); animation:float 4s ease-in-out infinite}
+#logo p{margin:14px auto 0; max-width:360px; font:700 clamp(15px,4.2vw,19px)/1.45 var(--ui); color:#fff8e6; text-shadow:0 2px 4px rgba(0,0,0,.6); text-wrap:balance}
+@keyframes float{50%{transform:translateY(-6px) rotate(-1deg)}}
+.tbtns{display:flex; flex-direction:column; gap:12px; width:min(360px,100%)}
+#loadbar{width:min(360px,100%); height:14px; border-radius:10px; background:rgba(247,236,214,.3); overflow:hidden; margin-bottom:12px}
+#loadfill{height:100%; width:0; background:var(--paper); transition:width .2s}
+#loadtxt{color:#fff8e6; font:700 15px var(--ui); margin-bottom:8px; text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.credit{color:#fff8e6; opacity:.85; font:500 12px/1.4 var(--ui); margin-top:14px; text-align:center; text-shadow:0 1px 3px rgba(0,0,0,.7)}
+#fade{position:fixed; inset:0; background:#120c06; opacity:0; pointer-events:none; z-index:25; transition:opacity .8s; display:flex; align-items:center; justify-content:center;
+  color:#fff1d6; font:400 26px/1.4 var(--display); text-align:center; padding:24px}
+
+/* wider screens: centred panels, a little more room */
+@media (min-width:700px){
+  .overlay{align-items:center; padding:16px}
+  .panel{border-radius:26px; padding-bottom:0; animation:pin .3s cubic-bezier(.2,.9,.3,1.2)}
+  .panel:before{display:none}
+}
+/* ===== landscape phones (the main target): short and wide ===== */
+@media (max-height:540px) and (orientation:landscape){
+  #top{top:calc(6px + var(--st)); left:max(8px, var(--sl)); right:max(8px, var(--sr))}
+  #card{flex:0 1 auto; display:flex; align-items:center; gap:8px; padding:4px 6px 4px 8px; border-radius:18px}
+  #lvl{width:38px; height:38px} #lvlN{inset:5px; font-size:14px}
+  #hearts{flex:0 0 auto; flex-wrap:nowrap} #hearts svg{width:21px; height:21px}
+  #inv{margin-top:0; padding-inline-start:8px; border-inline-start:2px solid var(--paper3)}
+  .tile{width:34px; height:32px} .tile img{width:28px; height:28px}
+  #quest{right:max(8px, var(--sr)); top:calc(var(--st) + 6px + var(--cardh, 48px) + 5px); max-width:min(46vw,420px); font-size:13px; padding:6px 10px}
+  #pops{top:30%}
+  #banner{top:18%} #banner div{font-size:clamp(30px,7vh,44px)}
+  #stickZone{width:50%; height:70%}
+  #stick{left:calc(24px + var(--sl) + 58px); bottom:calc(20px + var(--sb) + 58px); width:116px; height:116px; margin:0 0 -58px -58px}
+  #stickHint{bottom:-20px}
+  #btns{right:max(14px, var(--sr)); bottom:calc(12px + var(--sb)); transform:scale(.88); transform-origin:bottom right}
+  .overlay,.overlay.center{align-items:center; padding:8px max(8px, var(--sr)) 8px max(8px, var(--sl))}
+  .panel{border-radius:22px; max-width:640px; max-height:calc(100vh - 16px - var(--st) - var(--sb)); padding-bottom:0; animation:pin .25s cubic-bezier(.2,.9,.3,1.2)}
+  .panel:before{display:none}
+  .phead{padding:8px 14px 6px} .phead h2{font-size:22px} .close{width:38px; height:38px}
+  .tabs{padding:0 14px 8px} .tab{padding:8px 12px; font-size:14px}
+  .plist{display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:8px; padding:2px 12px 12px}
+  .card{padding:8px} .card img.ico{width:50px; height:50px}
+  .go{min-height:46px; min-width:70px}
+  .perks{flex-direction:row; padding:2px 12px 14px} .perk{flex:1; flex-direction:column; text-align:center; padding:12px}
+  .perk small{margin:0}
+  .pbody{padding:2px 14px 12px; gap:8px} .row{padding:6px 16px}
+  .pgrid{flex-direction:row; align-items:flex-start} .pgrid>*{flex:1; min-width:0} .pgrid .pbody{padding-top:6px}
+  .panel>.pbody,.panel>.perks{overflow-y:auto}
+  #logo{top:calc(5vh + var(--st))} #logo h1{font-size:clamp(46px,14vh,72px); -webkit-text-stroke:3px #3a2615} #logo p{margin-top:8px; font-size:14px}
+  #title{padding-bottom:calc(14px + var(--sb))}
+  .tbtns{flex-direction:row; width:min(520px,100%)} .tbtns .big{flex:1; padding:13px; font-size:22px}
+  .credit{margin-top:8px}
+}
+/* phone held upright: ask to turn it sideways */
+#rotate{position:fixed; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px;
+  background:radial-gradient(circle at 50% 40%, #3a8590, #1f4f57); color:#fff8e6; text-align:center}
+#rotate svg{width:96px; height:96px; animation:turn 2.2s ease-in-out infinite}
+#rotate b{font:400 30px/1.2 var(--display)}
+#rotate span{font:600 16px/1.45 var(--ui); max-width:280px; opacity:.9}
+@keyframes turn{0%,20%{transform:rotate(0)}50%,80%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+@media (orientation:portrait) and (pointer:coarse){ #rotate{display:flex} }
+@media (hover:hover) and (pointer:fine){ #stickZone{display:none} }
+@media (prefers-reduced-motion:reduce){ #logo h1{animation:none} .pop,#banner div{animation-duration:.01s} }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="top">
+    <div id="card">
+      <div id="row1">
+        <div id="lvl" aria-label="רמה"><svg viewBox="0 0 42 42"><circle class="trk" cx="21" cy="21" r="18"/><circle class="bar" id="xpRing" cx="21" cy="21" r="18" stroke-dasharray="113.1" stroke-dashoffset="113.1"/></svg><div id="lvlN">1</div></div>
+        <div id="hearts"></div>
+        <div id="coins"><img alt="" id="coinIcon"><span id="coinN">0</span></div>
+      </div>
+      <div id="inv"></div>
+    </div>
+    <button class="iconBtn" id="bPause" aria-label="תפריט"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="5" height="16" rx="2" fill="currentColor"/><rect x="14" y="4" width="5" height="16" rx="2" fill="currentColor"/></svg></button>
+  </div>
+  <button id="quest" aria-label="המשימה"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h10a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V5" stroke="#ffd77a" stroke-width="2"/><path d="M9 9h7M9 13h7M9 17h4" stroke="#fff6e2" stroke-width="2" stroke-linecap="round"/></svg><span id="questT"></span></button>
+  <div id="pops"></div>
+  <div id="banner"></div>
+</div>
+
+<div id="controls" class="hidden">
+  <div id="stickZone"><div id="stick"><div id="knob"></div><div id="stickHint">הליכה</div></div></div>
+  <div id="btns">
+    <button class="cbtn" id="bAct" aria-label="פעולה"><span id="actIco"></span><em id="actLbl">פעולה</em></button>
+    <button class="cbtn" id="bCraft" aria-label="בנייה"><svg viewBox="0 0 48 48" fill="none"><rect x="7" y="9" width="21" height="11" rx="3" fill="#fff8e6" transform="rotate(-35 17 14)"/><path d="M21 19l17 19" stroke="#fff8e6" stroke-width="6" stroke-linecap="round"/></svg><em>בנייה</em></button>
+    <button class="cbtn hidden" id="bEat" aria-label="לאכול"><svg viewBox="0 0 48 48"><circle cx="17" cy="29" r="9" fill="#fff8e6"/><circle cx="31" cy="29" r="9" fill="#fff8e6"/><circle cx="24" cy="18" r="8" fill="#fff8e6"/><path d="M24 10c2-4 6-5 9-4-2 3-5 4-9 4z" fill="#cfe9a5"/></svg><i id="eatN">0</i></button>
+    <div id="prompt" class="hidden"></div>
+  </div>
+  <div id="keys" class="hidden"><kbd>WASD</kbd> הליכה · <kbd>רווח</kbd> פעולה · <kbd>E</kbd> בנייה · <kbd>Q</kbd> לאכול · <kbd>Esc</kbd> תפריט</div>
+</div>
+
+<div id="title">
+  <div id="logo"><h1>אי אחרי אי</h1><p>חטבו, כרו, בנו וקנו עוד ועוד איים, עד שתדליקו את המגדלור העתיק.</p></div>
+  <div id="loadtxt">טוען את האיים…</div>
+  <div id="loadbar"><div id="loadfill"></div></div>
+  <div class="tbtns hidden" id="tbtns">
+    <button class="big" id="bPlay">שחקו</button>
+    <button class="big sec hidden" id="bNew">משחק חדש</button>
+  </div>
+  <div class="credit">משחק מקורי · מודלים ואנימציות בבלנדר · צלילים מספריית Sonniss GDC</div>
+</div>
+
+<div id="overlay" class="overlay hidden"></div>
+<div id="fade"></div>
+<div id="rotate" role="alert"><svg viewBox="0 0 96 96" fill="none"><rect x="30" y="12" width="36" height="72" rx="8" stroke="#fff8e6" stroke-width="5"/><circle cx="48" cy="73" r="3.5" fill="#fff8e6"/></svg>
+  <b>סובבו את הטלפון לרוחב</b><span>המשחק בנוי למסך שוכב: ג׳ויסטיק ביד שמאל, כפתורים ביד ימין.</span></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="js/game.js"></script>
+</body>
+</html>

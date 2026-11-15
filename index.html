@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="he" dir="rtl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f5560">
+<title>משחקים מטורפים</title>
+<meta name="description" content="משחקים מקוריים שנבנו לפי בקשות של העוקבים בערוץ">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&family=Secular+One&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f7ecd6; --paper2:#ecdcbb; --ink:#3a2615; --ink2:#6d4b2c; --leaf:#57952f; --leaf2:#356a1c; --sea:#1f5560; --sea2:#2f7f8a}
+*{box-sizing:border-box}
+body{margin:0; min-height:100vh; background:radial-gradient(120% 80% at 50% 0%, var(--sea2), var(--sea)); color:var(--paper); font-family:Rubik,system-ui,sans-serif;
+  padding:max(28px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 40px max(16px, env(safe-area-inset-left))}
+header{text-align:center; margin:8px auto 26px; max-width:640px}
+h1{margin:0; font:400 clamp(44px,11vw,76px)/1 'Secular One',Rubik,sans-serif; color:#fff8e6; -webkit-text-stroke:3px #3a2615; paint-order:stroke fill; text-shadow:0 6px 0 #3a2615}
+header p{margin:14px auto 0; font:500 16px/1.5 Rubik,sans-serif; max-width:440px; opacity:.92}
+main{display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); max-width:1000px; margin:0 auto}
+.card{display:flex; flex-direction:column; background:var(--paper); color:var(--ink); border-radius:22px; overflow:hidden; text-decoration:none;
+  box-shadow:0 6px 0 rgba(58,38,21,.35), 0 18px 34px rgba(0,0,0,.25); transition:transform .15s}
+.card:hover,.card:focus-visible{transform:translateY(-3px)} .card:focus-visible{outline:3px solid #ffd77a; outline-offset:3px}
+.shot{aspect-ratio:16/9; background:linear-gradient(#5aa7c4,#2f7f9c); max-width:100%} .shot img{width:100%; height:100%; object-fit:cover; display:block}
+.info{padding:14px 16px 16px} h2{margin:0; font:400 26px/1.15 'Secular One',Rubik,sans-serif}
+.info p{margin:6px 0 12px; font:500 14.5px/1.45 Rubik,sans-serif; color:var(--ink2)}
+.meta{display:flex; align-items:center; justify-content:space-between; gap:10px; font:600 13px Rubik,sans-serif; color:var(--ink2)}
+.play{background:linear-gradient(#7bb84a,var(--leaf)); color:#fff8e6; padding:9px 20px; border-radius:14px; font:800 16px Rubik,sans-serif; box-shadow:0 4px 0 var(--leaf2)}
+footer{text-align:center; margin-top:30px; font:500 13px Rubik,sans-serif; opacity:.75}
+</style></head><body>
+<header><h1>משחקים מטורפים</h1><p>משחקים מקוריים שנבנו לפי הבקשות שלכם בערוץ. בחרו משחק ותתחילו לשחק בטלפון.</p></header>
+<main>
+    <a class="card" href="island-after-island/">
+      <div class="shot"><img src="island-after-island/thumb.jpg" alt="" loading="lazy"></div>
+      <div class="info"><h2>אי אחרי אי</h2><p>הרפתקת איים בתלת־ממד: חוטבים, כורים, בונים, קונים עוד איים ומדליקים את המגדלור העתיק.</p>
+        <div class="meta"><span class="play">שחקו</span><span>טלפון לרוחב · 15.11.2026</span></div></div>
+    </a>
+</main>
+<footer>1 משחק · כל המשחקים מקוריים</footer>
+</body></html>

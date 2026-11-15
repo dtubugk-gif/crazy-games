@@ -1,0 +1,307 @@
+{
+  "sfx": {
+    "beacon_repair": {
+      "files": [
+        "beacon_repair_1.ogg"
+      ],
+      "gain": 1
+    },
+    "bridge_build": {
+      "files": [
+        "bridge_build_1.ogg"
+      ],
+      "gain": 0.85
+    },
+    "build": {
+      "files": [
+        "build_1.ogg"
+      ],
+      "gain": 0.85
+    },
+    "bush": {
+      "files": [
+        "bush_1.ogg",
+        "bush_2.ogg",
+        "bush_3.ogg"
+      ],
+      "gain": 0.7
+    },
+    "buy_land": {
+      "files": [
+        "buy_land_1.ogg"
+      ],
+      "gain": 0.85
+    },
+    "chest_open": {
+      "files": [
+        "chest_open_1.ogg"
+      ],
+      "gain": 0.9
+    },
+    "chop": {
+      "files": [
+        "chop_1.ogg",
+        "chop_2.ogg",
+        "chop_3.ogg",
+        "chop_4.ogg"
+      ],
+      "gain": 0.9
+    },
+    "coin": {
+      "files": [
+        "coin_1.ogg",
+        "coin_2.ogg",
+        "coin_3.ogg"
+      ],
+      "gain": 0.75
+    },
+    "craft": {
+      "files": [
+        "craft_1.ogg",
+        "craft_2.ogg"
+      ],
+      "gain": 0.8
+    },
+    "crystal_break": {
+      "files": [
+        "crystal_break_1.ogg"
+      ],
+      "gain": 0.95
+    },
+    "crystal_hit": {
+      "files": [
+        "crystal_hit_1.ogg",
+        "crystal_hit_2.ogg",
+        "crystal_hit_3.ogg"
+      ],
+      "gain": 0.85
+    },
+    "eat": {
+      "files": [
+        "eat_1.ogg",
+        "eat_2.ogg"
+      ],
+      "gain": 0.7
+    },
+    "faint": {
+      "files": [
+        "faint_1.ogg"
+      ],
+      "gain": 0.85
+    },
+    "levelup": {
+      "files": [
+        "levelup_1.ogg"
+      ],
+      "gain": 0.9
+    },
+    "mine": {
+      "files": [
+        "mine_1.ogg",
+        "mine_2.ogg",
+        "mine_3.ogg",
+        "mine_4.ogg"
+      ],
+      "gain": 0.9
+    },
+    "ore_clink": {
+      "files": [
+        "ore_clink_1.ogg",
+        "ore_clink_2.ogg",
+        "ore_clink_3.ogg"
+      ],
+      "gain": 0.85
+    },
+    "pickup": {
+      "files": [
+        "pickup_1.ogg",
+        "pickup_2.ogg",
+        "pickup_3.ogg",
+        "pickup_4.ogg"
+      ],
+      "gain": 0.6
+    },
+    "player_hurt": {
+      "files": [
+        "player_hurt_1.ogg",
+        "player_hurt_2.ogg"
+      ],
+      "gain": 0.85
+    },
+    "rock_break": {
+      "files": [
+        "rock_break_1.ogg",
+        "rock_break_2.ogg"
+      ],
+      "gain": 0.95
+    },
+    "slime_die": {
+      "files": [
+        "slime_die_1.ogg"
+      ],
+      "gain": 0.8
+    },
+    "slime_hop": {
+      "files": [
+        "slime_hop_1.ogg",
+        "slime_hop_2.ogg",
+        "slime_hop_3.ogg"
+      ],
+      "gain": 0.6
+    },
+    "slime_hurt": {
+      "files": [
+        "slime_hurt_1.ogg",
+        "slime_hurt_2.ogg"
+      ],
+      "gain": 0.75
+    },
+    "smelt": {
+      "files": [
+        "smelt_1.ogg"
+      ],
+      "gain": 0.8
+    },
+    "step_grass": {
+      "files": [
+        "step_grass_1.ogg",
+        "step_grass_2.ogg",
+        "step_grass_3.ogg",
+        "step_grass_4.ogg"
+      ],
+      "gain": 0.55
+    },
+    "step_snow": {
+      "files": [
+        "step_snow_1.ogg",
+        "step_snow_2.ogg",
+        "step_snow_3.ogg",
+        "step_snow_4.ogg"
+      ],
+      "gain": 0.55
+    },
+    "step_stone": {
+      "files": [
+        "step_stone_1.ogg",
+        "step_stone_2.ogg",
+        "step_stone_3.ogg"
+      ],
+      "gain": 0.55
+    },
+    "step_wood": {
+      "files": [
+        "step_wood_1.ogg",
+        "step_wood_2.ogg",
+        "step_wood_3.ogg",
+        "step_wood_4.ogg"
+      ],
+      "gain": 0.6
+    },
+    "swing": {
+      "files": [
+        "swing_1.ogg",
+        "swing_2.ogg",
+        "swing_3.ogg"
+      ],
+      "gain": 0.6
+    },
+    "tree_fall": {
+      "files": [
+        "tree_fall_1.ogg"
+      ],
+      "gain": 1
+    },
+    "ui_click": {
+      "files": [
+        "ui_click_1.ogg"
+      ],
+      "gain": 0.6
+    },
+    "ui_close": {
+      "files": [
+        "ui_close_1.ogg"
+      ],
+      "gain": 0.6
+    },
+    "ui_error": {
+      "files": [
+        "ui_error_1.ogg"
+      ],
+      "gain": 0.7
+    },
+    "ui_open": {
+      "files": [
+        "ui_open_1.ogg"
+      ],
+      "gain": 0.6
+    },
+    "ui_select": {
+      "files": [
+        "ui_select_1.ogg"
+      ],
+      "gain": 0.75
+    }
+  },
+  "loops": {
+    "amb_ancient": {
+      "file": "amb_ancient.ogg",
+      "gain": 0.65,
+      "loop": true
+    },
+    "amb_forest": {
+      "file": "amb_forest.ogg",
+      "gain": 0.6,
+      "loop": true
+    },
+    "amb_meadow": {
+      "file": "amb_meadow.ogg",
+      "gain": 0.6,
+      "loop": true
+    },
+    "amb_sea": {
+      "file": "amb_sea.ogg",
+      "gain": 0.45,
+      "loop": true
+    },
+    "amb_snow": {
+      "file": "amb_snow.ogg",
+      "gain": 0.55,
+      "loop": true
+    },
+    "furnace_loop": {
+      "file": "furnace_loop.ogg",
+      "gain": 0.7,
+      "loop": true
+    },
+    "windmill_loop": {
+      "file": "windmill_loop.ogg",
+      "gain": 0.75,
+      "loop": true
+    }
+  },
+  "music": {
+    "music_danger": {
+      "file": "music_danger.ogg",
+      "gain": 0.55,
+      "loop": true,
+      "bpm": 96,
+      "key": "B minor",
+      "bars": 16
+    },
+    "music_explore": {
+      "file": "music_explore.ogg",
+      "gain": 0.55,
+      "loop": true,
+      "bpm": 96,
+      "key": "D major",
+      "bars": 32
+    },
+    "music_win": {
+      "file": "music_win.ogg",
+      "gain": 0.7,
+      "loop": false,
+      "bpm": 96,
+      "key": "D major"
+    }
+  }
+}
