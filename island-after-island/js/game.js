@@ -1260,6 +1260,11 @@ function updatePrompt() {
     }
   } else setAct('pick', 'הכו', '');
   if (txt) { if (p.textContent !== txt) p.textContent = txt; p.classList.remove('hidden'); } else p.classList.add('hidden');
+  $('bAct').classList.toggle('idle', !(t && mode === 'play'));
+  // swing ring: fills while the pickaxe is recovering, so held presses feel timed
+  const ring = $('actRing'), cd = Math.max(0, player.swingCd), cdMax = 0.5 / 1.15;
+  if (cd > 0.01) { ring.classList.add('on'); ring.firstElementChild.style.strokeDashoffset = (389.6 * cd / cdMax).toFixed(1); }
+  else ring.classList.remove('on');
 }
 
 // ===================================================================== icons (rendered from the Blender item models)

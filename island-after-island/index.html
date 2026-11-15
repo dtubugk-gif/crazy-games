@@ -58,10 +58,11 @@ button:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
 .tile img{width:30px; height:30px}
 .tile b{position:absolute; bottom:-3px; left:-3px; min-width:18px; padding:1px 4px; border-radius:8px; background:var(--ink); color:#fff6e2;
   font:800 11px/1.3 var(--ui); text-align:center; font-variant-numeric:tabular-nums}
-.iconBtn{pointer-events:auto; width:46px; height:46px; flex:none; border-radius:16px; border:none; background:rgba(247,236,214,.95); box-shadow:var(--lift);
-  display:grid; place-items:center; color:var(--ink)}
-.iconBtn svg{width:22px; height:22px}
-.iconBtn:active{transform:translateY(2px)}
+.iconBtn{pointer-events:auto; width:46px; height:46px; flex:none; border-radius:50%; border:3px solid #fff4dc; color:#fff4dc;
+  background:radial-gradient(circle at 50% 28%, #74502c, #3e2614 72%); display:grid; place-items:center;
+  box-shadow:0 0 0 3px rgba(35,22,10,.5), 0 4px 0 3px rgba(35,22,10,.4), 0 8px 14px rgba(0,0,0,.25), inset 0 2px 0 rgba(255,255,255,.2)}
+.iconBtn svg{width:18px; height:18px}
+.iconBtn:active{transform:translateY(3px) scale(.94); filter:brightness(1.15)}
 #quest{pointer-events:auto; position:absolute; top:calc(var(--st) + 8px + var(--cardh, 92px) + 6px); right:calc(8px + var(--sr)); max-width:min(78vw,460px);
   display:flex; align-items:flex-start; gap:7px; background:var(--shade); color:#fff6e2; border:none; border-radius:14px; padding:7px 11px 7px 12px;
   font:500 13.5px/1.35 var(--ui); text-align:right; box-shadow:0 6px 16px rgba(0,0,0,.2)}
@@ -87,37 +88,55 @@ button:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
 @keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 
 /* ================= thumb controls ================= */
+/* one family: dark-wood discs with a cream inner rim + dark outer rim, so every control reads on grass, sand, water and snow */
 #controls{position:fixed; inset:0; pointer-events:none; z-index:6}
 #stickZone{position:absolute; left:0; bottom:0; width:56%; height:46%; pointer-events:auto}
-#stick{position:absolute; left:calc(28px + var(--sl) + 62px); bottom:calc(28px + var(--sb) + 62px); width:124px; height:124px; margin:0 0 -62px -62px;
-  border-radius:50%; background:radial-gradient(rgba(247,236,214,.10), rgba(247,236,214,.22)); border:3px solid rgba(247,236,214,.55);
-  transition:opacity .2s; opacity:.75}
-#stick.on{opacity:1; transition:none}
-#knob{position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px 0 0 -29px; border-radius:50%;
-  background:radial-gradient(circle at 40% 35%, #fffaf0, var(--paper2)); box-shadow:0 3px 0 rgba(58,38,21,.3), 0 8px 16px rgba(0,0,0,.25)}
-#stickHint{position:absolute; left:50%; bottom:-24px; transform:translateX(-50%); white-space:nowrap; color:#fff8e6; font:700 12px/1 var(--ui);
-  text-shadow:0 1px 3px rgba(0,0,0,.7)}
-#btns{position:absolute; right:calc(14px + var(--sr)); bottom:calc(18px + var(--sb)); width:190px; height:190px; pointer-events:none}
-.cbtn{position:absolute; border:none; border-radius:50%; pointer-events:auto; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  color:#fff8e6; background:linear-gradient(var(--woodhi), var(--wood)); box-shadow:inset 0 3px 0 rgba(255,255,255,.25), 0 5px 0 var(--wood2), 0 10px 20px rgba(0,0,0,.28)}
-.cbtn.down{transform:translateY(4px); box-shadow:inset 0 3px 0 rgba(255,255,255,.25), 0 1px 0 var(--wood2)}
-.cbtn svg{width:46%; height:46%}
-.cbtn em{font:800 12px/1 var(--ui); font-style:normal; margin-top:2px; text-shadow:0 1px 0 rgba(0,0,0,.35)}
-#bAct{right:0; bottom:0; width:100px; height:100px; background:linear-gradient(var(--leafhi), var(--leaf)); box-shadow:inset 0 3px 0 rgba(255,255,255,.3), 0 6px 0 var(--leaf2), 0 12px 22px rgba(0,0,0,.28)}
-#actIco{display:block; width:46%; height:46%}
-#bAct #actIco svg{width:100%; height:100%; display:block}
-#bAct em{font-size:14px; margin-top:3px}
-#bAct.gold{background:linear-gradient(#f3c55e,#d39a2a); box-shadow:inset 0 3px 0 rgba(255,255,255,.35), 0 6px 0 #8f5f12, 0 12px 22px rgba(0,0,0,.28)}
-#bAct.ui{background:linear-gradient(#5aa7c4,#2f7f9c); box-shadow:inset 0 3px 0 rgba(255,255,255,.3), 0 6px 0 #1d5569, 0 12px 22px rgba(0,0,0,.28)}
-#bAct.gold.down,#bAct.ui.down,#bAct.down{transform:translateY(5px)}
-#bCraft{right:110px; bottom:2px; width:66px; height:66px}
-#bEat{right:14px; bottom:114px; width:58px; height:58px; background:linear-gradient(#e46a62,#b8342d); box-shadow:inset 0 3px 0 rgba(255,255,255,.3), 0 5px 0 #7d1f1a, 0 10px 18px rgba(0,0,0,.25)}
-#bEat i{position:absolute; top:-5px; left:-5px; min-width:22px; height:22px; padding:0 5px; border-radius:11px; background:var(--paper); color:var(--ink);
-  font:900 12px/22px var(--ui); font-style:normal; box-shadow:0 2px 0 rgba(58,38,21,.3)}
-#prompt{position:absolute; right:0; bottom:116px; width:max-content; max-width:min(230px,58vw); background:var(--paper); border-radius:14px;
-  padding:7px 12px; font:800 14.5px/1.3 var(--ui); box-shadow:var(--lift); pointer-events:none; text-align:center}
-#prompt:after{content:''; position:absolute; bottom:-8px; right:42px; border:8px solid transparent; border-bottom:0; border-top-color:var(--paper)}
-#bEat:not(.hidden) ~ #prompt{bottom:184px}
+#stick{position:absolute; left:calc(30px + var(--sl) + 64px); bottom:calc(36px + var(--sb) + 64px); width:128px; height:128px; margin:0 0 -64px -64px;
+  border-radius:50%; background:radial-gradient(circle, rgba(30,20,10,.16) 0 52%, rgba(30,20,10,.38) 100%);
+  box-shadow:0 0 0 3px rgba(255,244,220,.9), 0 0 0 6px rgba(35,22,10,.4), inset 0 4px 14px rgba(0,0,0,.28);
+  opacity:.88; transition:opacity .2s, transform .15s}
+#stick.on{opacity:1; transform:scale(1.04)}
+#stick .ch{position:absolute; width:0; height:0; border:7px solid transparent; opacity:.85}
+#stick .ch.u{top:7px; left:50%; margin-left:-7px; border-bottom-color:#fff4dc; border-top:0}
+#stick .ch.d{bottom:7px; left:50%; margin-left:-7px; border-top-color:#fff4dc; border-bottom:0}
+#stick .ch.l{left:7px; top:50%; margin-top:-7px; border-right-color:#fff4dc; border-left:0}
+#stick .ch.r{right:7px; top:50%; margin-top:-7px; border-left-color:#fff4dc; border-right:0}
+#knob{position:absolute; left:50%; top:50%; width:60px; height:60px; margin:-30px 0 0 -30px; border-radius:50%;
+  background:radial-gradient(circle at 42% 34%, #fffdf6, #f1e3c3 60%, #d6bf93);
+  box-shadow:0 0 0 3px rgba(35,22,10,.5), 0 4px 0 2px rgba(35,22,10,.4), 0 10px 18px rgba(0,0,0,.3)}
+#knob:after{content:''; position:absolute; inset:15px; border-radius:50%; box-shadow:inset 0 2px 5px rgba(58,38,21,.4); background:rgba(214,191,147,.35)}
+#btns{position:absolute; right:calc(18px + var(--sr)); bottom:calc(26px + var(--sb)); width:204px; height:210px; pointer-events:none}
+.cbtn{position:absolute; border:3px solid #fff4dc; border-radius:50%; pointer-events:auto; display:grid; place-items:center; padding:0; color:#fff8e6;
+  background:radial-gradient(circle at 50% 28%, #74502c, #3e2614 72%);
+  box-shadow:0 0 0 3px rgba(35,22,10,.55), 0 6px 0 3px rgba(35,22,10,.5), 0 14px 22px rgba(0,0,0,.32), inset 0 3px 0 rgba(255,255,255,.2), inset 0 -6px 10px rgba(0,0,0,.25);
+  transition:transform .07s, filter .07s, box-shadow .07s}
+.cbtn.down{transform:translateY(4px) scale(.94); filter:brightness(1.15);
+  box-shadow:0 0 0 3px rgba(35,22,10,.55), 0 2px 0 3px rgba(35,22,10,.5), 0 6px 12px rgba(0,0,0,.3), inset 0 3px 0 rgba(255,255,255,.2), inset 0 -6px 10px rgba(0,0,0,.25)}
+.cbtn > svg{width:50%; height:50%; filter:drop-shadow(0 2px 0 rgba(0,0,0,.35))}
+.tag{position:absolute; left:50%; bottom:-12px; transform:translateX(-50%); background:#fff4dc; color:#3a2615; font:800 12.5px/1 var(--ui);
+  padding:4px 10px 3px; border-radius:10px; white-space:nowrap; pointer-events:none;
+  box-shadow:0 0 0 2px rgba(35,22,10,.55), 0 3px 0 2px rgba(35,22,10,.35)}
+#bAct{right:0; bottom:8px; width:110px; height:110px; border-width:4px; background:radial-gradient(circle at 50% 26%, #93d35e, #4d8f2a 60%, #2f6118)}
+#bAct.gold{background:radial-gradient(circle at 50% 26%, #ffdc7e, #e0a432 60%, #9c6614)}
+#bAct.ui{background:radial-gradient(circle at 50% 26%, #84c9e3, #3a8fb0 60%, #1f5a71)}
+#bAct.idle{filter:saturate(.45) brightness(.9)}
+#bAct.idle.down{filter:saturate(.7) brightness(1.05)}
+#actIco{display:block; width:52%; height:52%; filter:drop-shadow(0 2px 0 rgba(0,0,0,.35))}
+#actIco svg{width:100%; height:100%; display:block}
+#bAct .tag{font-size:14.5px; padding:5px 12px 4px; bottom:-13px}
+#bAct.gold .tag{color:#7a4d0c} #bAct.ui .tag{color:#1f5a71}
+#actRing{position:absolute; right:-10px; bottom:-2px; width:130px; height:130px; pointer-events:none; transform:rotate(-90deg); opacity:0; transition:opacity .15s}
+#actRing.on{opacity:1}
+#actRing circle{fill:none; stroke:#fff4dc; stroke-width:5; stroke-linecap:round; stroke-dasharray:389.6; stroke-dashoffset:389.6; filter:drop-shadow(0 0 2px rgba(35,22,10,.6))}
+#bCraft{right:128px; bottom:8px; width:72px; height:72px}
+#bEat{right:24px; bottom:140px; width:62px; height:62px; background:radial-gradient(circle at 50% 26%, #f08077, #c23e35 60%, #7e211b)}
+#bEat i{position:absolute; top:-7px; left:-7px; min-width:24px; height:24px; padding:0 6px; border-radius:12px; background:#fff4dc; color:#3a2615;
+  font:900 12.5px/24px var(--ui); font-style:normal; box-shadow:0 0 0 2px rgba(35,22,10,.55)}
+#prompt{position:absolute; right:0; bottom:142px; width:max-content; max-width:min(240px,58vw); background:#fff4dc; border-radius:14px;
+  padding:7px 13px; font:800 14.5px/1.3 var(--ui); color:#3a2615; pointer-events:none; text-align:center;
+  box-shadow:0 0 0 2px rgba(35,22,10,.5), 0 4px 0 2px rgba(35,22,10,.3), 0 10px 18px rgba(0,0,0,.2)}
+#prompt:after{content:''; position:absolute; bottom:-8px; right:47px; border:8px solid transparent; border-bottom:0; border-top-color:#fff4dc}
+#bEat:not(.hidden) ~ #prompt{bottom:222px}
 #keys{position:absolute; left:calc(14px + var(--sl)); bottom:calc(14px + var(--sb)); color:#fff8e6; font:500 13px/1.4 var(--ui); text-shadow:0 1px 2px rgba(0,0,0,.6)}
 #keys kbd{background:rgba(247,236,214,.92); color:var(--ink); border-radius:6px; padding:1px 6px; font:800 12px var(--ui); box-shadow:0 2px 0 rgba(0,0,0,.25)}
 
@@ -173,10 +192,11 @@ button:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
 .toggle.on{background:var(--leaf)} .toggle.on:after{right:25px}
 .stat{display:flex; justify-content:space-between; gap:12px; background:#fffaf0; border-radius:14px; padding:10px 14px; font:800 15px var(--ui)}
 .stat span:last-child{text-align:left}
-.big{border:none; border-radius:20px; padding:16px; font:400 25px/1 var(--display); color:#fff8e6; background:linear-gradient(var(--leafhi),var(--leaf));
-  box-shadow:inset 0 3px 0 rgba(255,255,255,.3), 0 6px 0 var(--leaf2), 0 16px 30px rgba(0,0,0,.3)}
-.big.sec{background:linear-gradient(var(--paper),var(--paper2)); color:var(--ink); box-shadow:0 6px 0 #b9a47c, 0 14px 26px rgba(0,0,0,.22); font:800 17px/1 var(--ui); padding:14px}
-.big:active{transform:translateY(4px)}
+.big{border:3px solid #fff4dc; border-radius:22px; padding:15px; font:400 25px/1 var(--display); color:#fff8e6; background:radial-gradient(120% 140% at 50% 0%, #93d35e, #4d8f2a 60%, #2f6118);
+  box-shadow:0 0 0 3px rgba(35,22,10,.55), 0 7px 0 3px rgba(35,22,10,.5), 0 16px 30px rgba(0,0,0,.3), inset 0 3px 0 rgba(255,255,255,.25); text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.big.sec{background:linear-gradient(#fffaf0,#ecdcbb); color:var(--ink); border-color:#fffaf0; font:800 17px/1 var(--ui); padding:13px; text-shadow:none;
+  box-shadow:0 0 0 3px rgba(35,22,10,.45), 0 6px 0 3px rgba(35,22,10,.35), 0 14px 26px rgba(0,0,0,.22)}
+.big:active{transform:translateY(4px) scale(.98); filter:brightness(1.08)}
 
 /* ================= title ================= */
 #title{position:fixed; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
@@ -212,9 +232,9 @@ button:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
   #pops{top:30%}
   #banner{top:18%} #banner div{font-size:clamp(30px,7vh,44px)}
   #stickZone{width:50%; height:70%}
-  #stick{left:calc(24px + var(--sl) + 58px); bottom:calc(20px + var(--sb) + 58px); width:116px; height:116px; margin:0 0 -58px -58px}
-  #stickHint{bottom:-20px}
-  #btns{right:max(14px, var(--sr)); bottom:calc(12px + var(--sb)); transform:scale(.88); transform-origin:bottom right}
+  #stick{left:calc(26px + var(--sl) + 58px); bottom:calc(26px + var(--sb) + 58px); width:116px; height:116px; margin:0 0 -58px -58px}
+  #stickHint{bottom:-14px}
+  #btns{right:max(16px, var(--sr)); bottom:calc(18px + var(--sb)); transform:scale(.86); transform-origin:bottom right}
   .overlay,.overlay.center{align-items:center; padding:8px max(8px, var(--sr)) 8px max(8px, var(--sl))}
   .panel{border-radius:22px; max-width:640px; max-height:calc(100vh - 16px - var(--st) - var(--sb)); padding-bottom:0; animation:pin .25s cubic-bezier(.2,.9,.3,1.2)}
   .panel:before{display:none}
@@ -266,11 +286,12 @@ button:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
 </div>
 
 <div id="controls" class="hidden">
-  <div id="stickZone"><div id="stick"><div id="knob"></div><div id="stickHint">הליכה</div></div></div>
+  <div id="stickZone"><div id="stick"><i class="ch u"></i><i class="ch d"></i><i class="ch l"></i><i class="ch r"></i><div id="knob"></div><div id="stickHint" class="tag">הליכה</div></div></div>
   <div id="btns">
-    <button class="cbtn" id="bAct" aria-label="פעולה"><span id="actIco"></span><em id="actLbl">פעולה</em></button>
-    <button class="cbtn" id="bCraft" aria-label="בנייה"><svg viewBox="0 0 48 48" fill="none"><rect x="7" y="9" width="21" height="11" rx="3" fill="#fff8e6" transform="rotate(-35 17 14)"/><path d="M21 19l17 19" stroke="#fff8e6" stroke-width="6" stroke-linecap="round"/></svg><em>בנייה</em></button>
-    <button class="cbtn hidden" id="bEat" aria-label="לאכול"><svg viewBox="0 0 48 48"><circle cx="17" cy="29" r="9" fill="#fff8e6"/><circle cx="31" cy="29" r="9" fill="#fff8e6"/><circle cx="24" cy="18" r="8" fill="#fff8e6"/><path d="M24 10c2-4 6-5 9-4-2 3-5 4-9 4z" fill="#cfe9a5"/></svg><i id="eatN">0</i></button>
+    <svg id="actRing" viewBox="0 0 130 130"><circle cx="65" cy="65" r="62"/></svg>
+    <button class="cbtn" id="bAct" aria-label="פעולה"><span id="actIco"></span><span class="tag" id="actLbl">פעולה</span></button>
+    <button class="cbtn" id="bCraft" aria-label="בנייה"><svg viewBox="0 0 48 48" fill="none"><rect x="7" y="9" width="21" height="11" rx="3" fill="#fff8e6" transform="rotate(-35 17 14)"/><path d="M21 19l17 19" stroke="#fff8e6" stroke-width="6" stroke-linecap="round"/></svg><span class="tag">בנייה</span></button>
+    <button class="cbtn hidden" id="bEat" aria-label="לאכול"><svg viewBox="0 0 48 48"><circle cx="17" cy="29" r="9" fill="#fff8e6"/><circle cx="31" cy="29" r="9" fill="#fff8e6"/><circle cx="24" cy="18" r="8" fill="#fff8e6"/><path d="M24 10c2-4 6-5 9-4-2 3-5 4-9 4z" fill="#cfe9a5"/></svg><i id="eatN">0</i><span class="tag">אכלו</span></button>
     <div id="prompt" class="hidden"></div>
   </div>
   <div id="keys" class="hidden"><kbd>WASD</kbd> הליכה · <kbd>רווח</kbd> פעולה · <kbd>E</kbd> בנייה · <kbd>Q</kbd> לאכול · <kbd>Esc</kbd> תפריט</div>
