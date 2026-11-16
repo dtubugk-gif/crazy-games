@@ -1,0 +1,464 @@
+{
+  "sfx": {
+    "barricade_break": {
+      "files": [
+        "barricade_break_1.ogg"
+      ],
+      "gain": 0.65
+    },
+    "bolt_cast": {
+      "files": [
+        "bolt_cast_1.ogg",
+        "bolt_cast_2.ogg"
+      ],
+      "gain": 0.47
+    },
+    "bolt_zap": {
+      "files": [
+        "bolt_zap_1.ogg",
+        "bolt_zap_2.ogg",
+        "bolt_zap_3.ogg"
+      ],
+      "gain": 0.46
+    },
+    "boss_die": {
+      "files": [
+        "boss_die_1.ogg"
+      ],
+      "gain": 0.48
+    },
+    "boss_hurt": {
+      "files": [
+        "boss_hurt_1.ogg",
+        "boss_hurt_2.ogg"
+      ],
+      "gain": 0.52
+    },
+    "boss_open": {
+      "files": [
+        "boss_open_1.ogg"
+      ],
+      "gain": 0.52
+    },
+    "boss_roar": {
+      "files": [
+        "boss_roar_1.ogg"
+      ],
+      "gain": 0.46
+    },
+    "boss_slam": {
+      "files": [
+        "boss_slam_1.ogg"
+      ],
+      "gain": 0.49
+    },
+    "boss_step": {
+      "files": [
+        "boss_step_1.ogg",
+        "boss_step_2.ogg"
+      ],
+      "gain": 0.57
+    },
+    "boss_stomp": {
+      "files": [
+        "boss_stomp_1.ogg"
+      ],
+      "gain": 0.53
+    },
+    "boss_throw": {
+      "files": [
+        "boss_throw_1.ogg"
+      ],
+      "gain": 0.52
+    },
+    "bot_attack": {
+      "files": [
+        "bot_attack_1.ogg"
+      ],
+      "gain": 0.57
+    },
+    "bot_die": {
+      "files": [
+        "bot_die_1.ogg",
+        "bot_die_2.ogg"
+      ],
+      "gain": 0.5
+    },
+    "bot_hurt": {
+      "files": [
+        "bot_hurt_1.ogg",
+        "bot_hurt_2.ogg"
+      ],
+      "gain": 0.52
+    },
+    "bot_step": {
+      "files": [
+        "bot_step_1.ogg",
+        "bot_step_2.ogg",
+        "bot_step_3.ogg"
+      ],
+      "gain": 0.8
+    },
+    "brute_smash": {
+      "files": [
+        "brute_smash_1.ogg"
+      ],
+      "gain": 0.58
+    },
+    "brute_step": {
+      "files": [
+        "brute_step_1.ogg",
+        "brute_step_2.ogg"
+      ],
+      "gain": 0.6
+    },
+    "bullet_hit": {
+      "files": [
+        "bullet_hit_1.ogg"
+      ],
+      "gain": 0.57
+    },
+    "checkpoint": {
+      "files": [
+        "checkpoint_1.ogg"
+      ],
+      "gain": 0.53
+    },
+    "coin": {
+      "files": [
+        "coin_1.ogg",
+        "coin_2.ogg",
+        "coin_3.ogg"
+      ],
+      "gain": 0.36
+    },
+    "crystal_get": {
+      "files": [
+        "crystal_get_1.ogg"
+      ],
+      "gain": 0.46
+    },
+    "die": {
+      "files": [
+        "die_1.ogg"
+      ],
+      "gain": 0.38
+    },
+    "drone_die": {
+      "files": [
+        "drone_die_1.ogg"
+      ],
+      "gain": 0.62
+    },
+    "drone_shoot": {
+      "files": [
+        "drone_shoot_1.ogg",
+        "drone_shoot_2.ogg"
+      ],
+      "gain": 0.53
+    },
+    "energy_empty": {
+      "files": [
+        "energy_empty_1.ogg"
+      ],
+      "gain": 0.72
+    },
+    "fire_cast": {
+      "files": [
+        "fire_cast_1.ogg",
+        "fire_cast_2.ogg"
+      ],
+      "gain": 0.49
+    },
+    "fire_explode": {
+      "files": [
+        "fire_explode_1.ogg",
+        "fire_explode_2.ogg"
+      ],
+      "gain": 0.58
+    },
+    "fly_start": {
+      "files": [
+        "fly_start_1.ogg"
+      ],
+      "gain": 0.5
+    },
+    "freeze": {
+      "files": [
+        "freeze_1.ogg",
+        "freeze_2.ogg"
+      ],
+      "gain": 0.48
+    },
+    "gate_open": {
+      "files": [
+        "gate_open_1.ogg"
+      ],
+      "gain": 0.51
+    },
+    "gear_whirr": {
+      "files": [
+        "gear_whirr_1.ogg"
+      ],
+      "gain": 0.67
+    },
+    "generator_on": {
+      "files": [
+        "generator_on_1.ogg"
+      ],
+      "gain": 0.59
+    },
+    "heart": {
+      "files": [
+        "heart_1.ogg"
+      ],
+      "gain": 0.61
+    },
+    "hurt": {
+      "files": [
+        "hurt_1.ogg",
+        "hurt_2.ogg"
+      ],
+      "gain": 0.43
+    },
+    "ice_shatter": {
+      "files": [
+        "ice_shatter_1.ogg",
+        "ice_shatter_2.ogg"
+      ],
+      "gain": 0.48
+    },
+    "jump": {
+      "files": [
+        "jump_1.ogg",
+        "jump_2.ogg"
+      ],
+      "gain": 0.71
+    },
+    "land": {
+      "files": [
+        "land_1.ogg",
+        "land_2.ogg"
+      ],
+      "gain": 0.5
+    },
+    "power_ready": {
+      "files": [
+        "power_ready_1.ogg"
+      ],
+      "gain": 0.72
+    },
+    "punch_hit": {
+      "files": [
+        "punch_hit_1.ogg",
+        "punch_hit_2.ogg",
+        "punch_hit_3.ogg"
+      ],
+      "gain": 0.43
+    },
+    "punch_whoosh": {
+      "files": [
+        "punch_whoosh_1.ogg",
+        "punch_whoosh_2.ogg",
+        "punch_whoosh_3.ogg"
+      ],
+      "gain": 0.55
+    },
+    "shield_block": {
+      "files": [
+        "shield_block_1.ogg",
+        "shield_block_2.ogg"
+      ],
+      "gain": 0.43
+    },
+    "shield_break": {
+      "files": [
+        "shield_break_1.ogg"
+      ],
+      "gain": 0.64
+    },
+    "smash_hit": {
+      "files": [
+        "smash_hit_1.ogg"
+      ],
+      "gain": 0.51
+    },
+    "splash": {
+      "files": [
+        "splash_1.ogg"
+      ],
+      "gain": 0.54
+    },
+    "steam_hiss": {
+      "files": [
+        "steam_hiss_1.ogg"
+      ],
+      "gain": 0.62
+    },
+    "step_metal": {
+      "files": [
+        "step_metal_1.ogg",
+        "step_metal_2.ogg",
+        "step_metal_3.ogg"
+      ],
+      "gain": 0.63
+    },
+    "step_stone": {
+      "files": [
+        "step_stone_1.ogg",
+        "step_stone_2.ogg",
+        "step_stone_3.ogg",
+        "step_stone_4.ogg"
+      ],
+      "gain": 0.67
+    },
+    "step_tile": {
+      "files": [
+        "step_tile_1.ogg",
+        "step_tile_2.ogg",
+        "step_tile_3.ogg"
+      ],
+      "gain": 0.66
+    },
+    "storm": {
+      "files": [
+        "storm_1.ogg"
+      ],
+      "gain": 0.49
+    },
+    "ui_back": {
+      "files": [
+        "ui_back_1.ogg"
+      ],
+      "gain": 0.73
+    },
+    "ui_click": {
+      "files": [
+        "ui_click_1.ogg"
+      ],
+      "gain": 0.55
+    },
+    "ui_star": {
+      "files": [
+        "ui_star_1.ogg",
+        "ui_star_2.ogg",
+        "ui_star_3.ogg"
+      ],
+      "gain": 0.49
+    },
+    "wall_break": {
+      "files": [
+        "wall_break_1.ogg"
+      ],
+      "gain": 0.55
+    },
+    "water_freeze": {
+      "files": [
+        "water_freeze_1.ogg"
+      ],
+      "gain": 0.54
+    }
+  },
+  "loops": {
+    "amb_canal": {
+      "file": "amb_canal.ogg",
+      "gain": 0.35,
+      "loop": true
+    },
+    "amb_factory": {
+      "file": "amb_factory.ogg",
+      "gain": 0.34,
+      "loop": true
+    },
+    "amb_roof": {
+      "file": "amb_roof.ogg",
+      "gain": 0.34,
+      "loop": true
+    },
+    "amb_tower": {
+      "file": "amb_tower.ogg",
+      "gain": 0.34,
+      "loop": true
+    },
+    "amb_town": {
+      "file": "amb_town.ogg",
+      "gain": 0.35,
+      "loop": true
+    },
+    "burn_loop": {
+      "file": "burn_loop.ogg",
+      "gain": 0.3,
+      "loop": true
+    },
+    "charge_loop": {
+      "file": "charge_loop.ogg",
+      "gain": 0.3,
+      "loop": true
+    },
+    "drone_loop": {
+      "file": "drone_loop.ogg",
+      "gain": 0.24,
+      "loop": true
+    },
+    "fly_loop": {
+      "file": "fly_loop.ogg",
+      "gain": 0.34,
+      "loop": true
+    },
+    "generator_loop": {
+      "file": "generator_loop.ogg",
+      "gain": 0.24,
+      "loop": true
+    },
+    "ice_beam_loop": {
+      "file": "ice_beam_loop.ogg",
+      "gain": 0.35,
+      "loop": true
+    },
+    "lift_loop": {
+      "file": "lift_loop.ogg",
+      "gain": 0.27,
+      "loop": true
+    }
+  },
+  "music": {
+    "music_boss": {
+      "file": "music_boss.ogg",
+      "gain": 0.6,
+      "loop": true,
+      "bpm": 150,
+      "key": "D minor",
+      "bars": 32
+    },
+    "music_level": {
+      "file": "music_level.ogg",
+      "gain": 0.6,
+      "loop": true,
+      "bpm": 140,
+      "key": "D major",
+      "bars": 40
+    },
+    "music_lose": {
+      "file": "music_lose.ogg",
+      "gain": 0.6,
+      "loop": false,
+      "bpm": 84,
+      "key": "D minor"
+    },
+    "music_title": {
+      "file": "music_title.ogg",
+      "gain": 0.6,
+      "loop": true,
+      "bpm": 100,
+      "key": "D major",
+      "bars": 24
+    },
+    "music_win": {
+      "file": "music_win.ogg",
+      "gain": 0.6,
+      "loop": false,
+      "bpm": 120,
+      "key": "D major"
+    }
+  }
+}

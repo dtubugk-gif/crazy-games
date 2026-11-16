@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#7fb6c9">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>סערת כוחות</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800;900&family=Secular+One&display=swap" rel="stylesheet">
+<style>
+/* Phone-first (held sideways) superhero UI: cream comic paper + chunky discs over a sunny 2.5D town.
+   Thumbs own the bottom corners, status owns the top. Element colours are warm and natural, never neon. */
+:root{
+  --paper:#fbf0dc; --paper2:#f0dfbf; --paper3:#e4cfa6; --ink:#2b1d14; --ink2:#6b4a30;
+  --red:#c8372b; --red2:#8d1f17; --redhi:#ef6a4f; --teal:#1f6a6a; --teal2:#124646;
+  --gold:#e6a93a; --gold2:#a4691a; --heart:#d8433b;
+  --fire1:#ffc06a; --fire2:#e0652a; --fire3:#9a2d10;
+  --ice1:#e4f3fa; --ice2:#8dbfd8; --ice3:#3f7a99;
+  --bolt1:#fff1b0; --bolt2:#e7b93a; --bolt3:#94650f;
+  --wind1:#f4f8f2; --wind2:#a9c9c2; --wind3:#4d7c74;
+  --shade:rgba(36,24,14,.84);
+  --display:'Secular One','Rubik',system-ui,sans-serif; --ui:'Rubik',system-ui,sans-serif;
+  --lift:0 3px 0 rgba(43,29,20,.32), 0 8px 18px rgba(30,20,10,.22);
+  --sb: env(safe-area-inset-bottom, 0px); --st: env(safe-area-inset-top, 0px);
+  --sl: env(safe-area-inset-left, 0px); --sr: env(safe-area-inset-right, 0px);
+  color-scheme: light;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html{direction:rtl}
+html,body{margin:0; height:100%; overflow:hidden; background:#7fb6c9; color:var(--ink); font-family:var(--ui);
+  touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; overscroll-behavior:none}
+canvas#c{position:fixed; inset:0; width:100%; height:100%; display:block}
+button{font-family:inherit; cursor:pointer; color:inherit}
+button:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+.hidden{display:none !important}
+
+/* ================= top HUD ================= */
+#hud{position:fixed; inset:0; pointer-events:none; z-index:5}
+#top{position:absolute; top:calc(7px + var(--st)); left:max(8px, var(--sl)); right:max(8px, var(--sr)); display:flex; gap:8px; align-items:flex-start}
+#card{display:flex; align-items:center; gap:9px; background:rgba(251,240,220,.95); border-radius:18px; box-shadow:var(--lift); padding:5px 10px 5px 8px}
+#hearts{display:flex; gap:1px}
+#hearts svg{width:22px; height:22px; filter:drop-shadow(0 1.5px 0 rgba(43,29,20,.25))}
+#hearts.hit svg{animation:shake .35s}
+#meters{display:flex; flex-direction:column; gap:4px; width:clamp(90px,17vw,150px)}
+.meter{position:relative; height:10px; border-radius:6px; background:var(--paper3); overflow:hidden; box-shadow:inset 0 1px 2px rgba(43,29,20,.25)}
+.meter i{position:absolute; inset:0 auto 0 0; width:100%; border-radius:6px; transform-origin:left; transition:transform .12s linear}
+#energy i{background:linear-gradient(#7fc6d8,#2f8aa6)}
+#energy.low i{background:linear-gradient(#f0a08a,#c8372b)}
+#storm i{background:linear-gradient(90deg,#e0652a,#e7b93a,#8dbfd8)}
+#storm.full{animation:pulse 1s ease-in-out infinite}
+.meter b{position:absolute; inset:0; font:800 8px/10px var(--ui); color:rgba(255,255,255,.95); text-align:center; text-shadow:0 1px 1px rgba(0,0,0,.4)}
+#coins{display:flex; align-items:center; gap:4px; background:var(--paper2); border-radius:13px; padding:3px 9px 3px 5px; font:900 16px/1 var(--ui); font-variant-numeric:tabular-nums}
+#coins svg{width:22px; height:22px}
+#coins.bump{animation:pop .3s}
+#lvlChip{background:var(--shade); color:#fff3dc; border-radius:13px; padding:7px 11px; font:700 13px/1 var(--ui); white-space:nowrap; box-shadow:var(--lift)}
+#bossBar{position:absolute; top:calc(54px + var(--st)); left:50%; transform:translateX(-50%); width:min(56vw,460px); text-align:center}
+#bossBar span{display:inline-block; font:400 16px/1 var(--display); color:#fff3dc; text-shadow:0 2px 0 rgba(43,29,20,.7); margin-bottom:4px}
+#bossBar .meter{height:13px; box-shadow:0 0 0 3px rgba(43,29,20,.55), inset 0 1px 2px rgba(43,29,20,.3)}
+#bossBar .meter i{background:linear-gradient(#e6a93a,#a4691a)}
+.iconBtn{pointer-events:auto; width:44px; height:44px; flex:none; border-radius:50%; border:3px solid #fff4dc; color:#fff4dc; margin-inline-start:auto;
+  background:radial-gradient(circle at 50% 28%, #3c6f72, #173b3d 72%); display:grid; place-items:center;
+  box-shadow:0 0 0 3px rgba(30,20,12,.5), 0 4px 0 3px rgba(30,20,12,.4), 0 8px 14px rgba(0,0,0,.25), inset 0 2px 0 rgba(255,255,255,.2)}
+.iconBtn svg{width:18px; height:18px}
+.iconBtn:active{transform:translateY(3px) scale(.94); filter:brightness(1.15)}
+#hint{position:absolute; top:calc(var(--st) + 58px); right:max(8px, var(--sr)); max-width:min(44vw,400px);
+  display:flex; align-items:center; gap:8px; background:var(--shade); color:#fff6e2; border-radius:14px; padding:7px 12px; font:500 13.5px/1.35 var(--ui);
+  box-shadow:0 6px 16px rgba(0,0,0,.2); transition:opacity .3s, transform .3s}
+#hint.off{opacity:0; transform:translateY(-6px)}
+body.boss #hint{top:calc(var(--st) + 96px)}
+body.boss #banner{top:36%}
+#hint b{color:#ffd77a; font-weight:800}
+#hint svg{width:22px; height:22px; flex:none}
+#pops{position:absolute; left:0; right:0; top:34%; display:flex; flex-direction:column; align-items:center; gap:4px}
+.pop{background:rgba(251,240,220,.96); border-radius:14px; padding:4px 12px; font:800 15px/1.2 var(--ui); box-shadow:0 3px 0 rgba(43,29,20,.25);
+  animation:popin .22s ease-out, popout .45s ease-in 1.2s forwards}
+.pop.warn{background:#f8d9cf; color:#8f1f19}
+@keyframes popin{from{transform:translateY(10px) scale(.8); opacity:0}}
+@keyframes popout{to{transform:translateY(-26px); opacity:0}}
+#banner{position:absolute; top:20%; left:0; right:0; text-align:center; pointer-events:none; padding:0 16px}
+#banner div{display:inline-block; font:400 clamp(30px,8vh,52px)/1.05 var(--display); color:#fff8e6; -webkit-text-stroke:2px rgba(43,29,20,.6); paint-order:stroke fill;
+  text-shadow:0 4px 0 rgba(43,29,20,.6), 0 12px 30px rgba(0,0,0,.25); animation:ban 2.6s forwards}
+#banner small{display:block; margin-top:6px; font:800 clamp(14px,3.6vh,19px)/1.2 var(--ui); -webkit-text-stroke:0; text-shadow:0 2px 3px rgba(0,0,0,.6)}
+@keyframes ban{0%{transform:scale(.6); opacity:0}12%{transform:scale(1.06); opacity:1}20%{transform:scale(1)}80%{opacity:1}100%{opacity:0; transform:translateY(-14px)}}
+@keyframes pop{50%{transform:scale(1.25)}}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes pulse{50%{box-shadow:0 0 0 3px rgba(231,185,58,.75), inset 0 1px 2px rgba(43,29,20,.25)}}
+#flash{position:fixed; inset:0; z-index:4; pointer-events:none; background:#fff6e0; opacity:0}
+
+/* ================= thumb controls ================= */
+/* one family: chunky discs with a cream inner rim + dark outer rim, readable on sky, stone and water;
+   each power wears its element colour; press = shrink + brighten; cooldown = cream ring; locked powers are hidden */
+#controls{position:fixed; inset:0; pointer-events:none; z-index:6}
+#stickZone{position:absolute; left:0; bottom:0; width:46%; height:72%; pointer-events:auto}
+#stick{position:absolute; left:calc(24px + var(--sl) + 60px); bottom:calc(24px + var(--sb) + 60px); width:120px; height:120px; margin:0 0 -60px -60px;
+  border-radius:50%; background:radial-gradient(circle, rgba(20,14,8,.14) 0 52%, rgba(20,14,8,.36) 100%);
+  box-shadow:0 0 0 3px rgba(255,244,220,.9), 0 0 0 6px rgba(30,20,12,.4), inset 0 4px 14px rgba(0,0,0,.28);
+  opacity:.9; transition:opacity .2s, transform .15s}
+#stick.on{opacity:1; transform:scale(1.04)}
+#stick .ch{position:absolute; width:0; height:0; border:8px solid transparent; opacity:.9}
+#stick .ch.l{left:8px; top:50%; margin-top:-8px; border-right-color:#fff4dc; border-left:0}
+#stick .ch.r{right:8px; top:50%; margin-top:-8px; border-left-color:#fff4dc; border-right:0}
+#knob{position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px 0 0 -29px; border-radius:50%;
+  background:radial-gradient(circle at 42% 34%, #fffdf6, #f1e3c3 60%, #d6bf93);
+  box-shadow:0 0 0 3px rgba(30,20,12,.5), 0 4px 0 2px rgba(30,20,12,.4), 0 10px 18px rgba(0,0,0,.3)}
+#knob:after{content:''; position:absolute; inset:15px; border-radius:50%; box-shadow:inset 0 2px 5px rgba(43,29,20,.4); background:rgba(214,191,147,.35)}
+#stick .tag{bottom:-13px}
+#btns{position:absolute; right:max(14px, var(--sr)); bottom:calc(16px + var(--sb)); width:300px; height:250px; pointer-events:none; transform-origin:bottom right}
+.cbtn{position:absolute; border:3px solid #fff4dc; border-radius:50%; pointer-events:auto; display:grid; place-items:center; padding:0; color:#fff8e6;
+  background:radial-gradient(circle at 50% 28%, #6b4a30, #3a2615 72%);
+  box-shadow:0 0 0 3px rgba(30,20,12,.55), 0 6px 0 3px rgba(30,20,12,.5), 0 14px 22px rgba(0,0,0,.32), inset 0 3px 0 rgba(255,255,255,.22), inset 0 -6px 10px rgba(0,0,0,.25);
+  transition:transform .07s, filter .07s, box-shadow .07s, opacity .2s; touch-action:none}
+.cbtn.down{transform:translateY(4px) scale(.93); filter:brightness(1.18);
+  box-shadow:0 0 0 3px rgba(30,20,12,.55), 0 2px 0 3px rgba(30,20,12,.5), 0 6px 12px rgba(0,0,0,.3), inset 0 3px 0 rgba(255,255,255,.22), inset 0 -6px 10px rgba(0,0,0,.25)}
+.cbtn > svg.ico{width:54%; height:54%; filter:drop-shadow(0 2px 0 rgba(0,0,0,.35)); pointer-events:none}
+.cbtn.cool{filter:saturate(.35) brightness(.85)}
+.cbtn.cool.down{filter:saturate(.5) brightness(1)}
+.cbtn.noen{filter:saturate(.2) brightness(.75)}
+.tag{position:absolute; left:50%; bottom:-12px; transform:translateX(-50%); background:#fff4dc; color:#2b1d14; font:800 12px/1 var(--ui);
+  padding:4px 9px 3px; border-radius:10px; white-space:nowrap; pointer-events:none;
+  box-shadow:0 0 0 2px rgba(30,20,12,.55), 0 3px 0 2px rgba(30,20,12,.35)}
+.ring{position:absolute; inset:-9px; width:calc(100% + 18px); height:calc(100% + 18px); pointer-events:none; transform:rotate(-90deg)}
+.ring circle{fill:none; stroke:#fff4dc; stroke-width:5; stroke-linecap:round; stroke-dasharray:100; stroke-dashoffset:100; filter:drop-shadow(0 0 2px rgba(30,20,12,.7))}
+#bPunch{right:0; bottom:10px; width:104px; height:104px; border-width:4px; background:radial-gradient(circle at 50% 26%, #ef6a4f, #c8372b 58%, #7d1a12)}
+#bPunch .tag{font-size:14px; padding:5px 12px 4px; bottom:-13px}
+#bPunch.charging{animation:charge .25s ease-in-out infinite alternate}
+@keyframes charge{to{filter:brightness(1.3) saturate(1.2); transform:translateY(4px) scale(.96)}}
+#bJump{right:122px; bottom:0; width:78px; height:78px; background:radial-gradient(circle at 50% 26%, #5b9aa0, #1f6a6a 60%, #0f3c3d)}
+#bJump.fly{background:radial-gradient(circle at 50% 26%, #c6ddd6, #6f9e94 60%, #35615a)}
+#bFire{right:6px; bottom:136px; width:66px; height:66px; background:radial-gradient(circle at 50% 26%, var(--fire1), var(--fire2) 58%, var(--fire3))}
+#bIce{right:86px; bottom:112px; width:66px; height:66px; background:radial-gradient(circle at 50% 26%, var(--ice1), var(--ice2) 58%, var(--ice3))}
+#bBolt{right:160px; bottom:92px; width:66px; height:66px; background:radial-gradient(circle at 50% 26%, var(--bolt1), var(--bolt2) 58%, var(--bolt3))}
+#bIce .tag,#bFire .tag,#bBolt .tag{font-size:11.5px}
+#bStorm{right:214px; bottom:170px; width:74px; height:74px; border-color:#fff8e6;
+  background:conic-gradient(from 0deg, #e0652a, #e7b93a, #8dbfd8, #6f9e94, #e0652a); animation:stormSpin 3s linear infinite}
+#bStorm > svg.ico{animation:stormSpin 3s linear infinite reverse}
+@keyframes stormSpin{to{transform:rotate(360deg)}}
+#bStorm.down{animation-play-state:paused}
+
+/* ================= panels ================= */
+.overlay{position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center; background:rgba(22,16,10,.45);
+  padding:8px max(8px, var(--sr)) 8px max(8px, var(--sl))}
+.panel{background:var(--paper); width:100%; max-width:640px; max-height:calc(100vh - 16px - var(--st) - var(--sb)); display:flex; flex-direction:column; overflow:hidden;
+  border-radius:24px; box-shadow:0 0 0 4px rgba(43,29,20,.5), 0 14px 40px rgba(0,0,0,.35); animation:pin .28s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pin{from{transform:translateY(24px) scale(.94); opacity:0}}
+.phead{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 16px 6px}
+.phead h2{margin:0; font:400 24px/1.15 var(--display); text-wrap:balance}
+.close{width:40px; height:40px; flex:none; border-radius:14px; border:none; background:var(--paper2); color:var(--ink); font:900 22px/1 var(--ui)}
+.pbody{padding:4px 16px 14px; display:flex; flex-direction:column; gap:9px; overflow-y:auto; touch-action:pan-y}
+.lead{font:500 15px/1.5 var(--ui); margin:0; text-wrap:pretty}
+.row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:4px 2px; font:800 15px var(--ui)}
+.row input[type=range]{flex:1; max-width:250px; accent-color:var(--red); height:28px}
+.toggle{width:52px; height:30px; flex:none; border-radius:16px; border:none; background:var(--paper3); position:relative}
+.toggle:after{content:''; position:absolute; top:3px; right:3px; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:right .2s}
+.toggle.on{background:var(--red)} .toggle.on:after{right:25px}
+.btnrow{display:flex; gap:10px; flex-wrap:wrap}
+.btnrow > *{flex:1}
+.big{border:3px solid #fff4dc; border-radius:20px; padding:13px 16px; font:400 23px/1 var(--display); color:#fff8e6; min-height:54px;
+  background:radial-gradient(120% 140% at 50% 0%, #ef6a4f, #c8372b 60%, #7d1a12);
+  box-shadow:0 0 0 3px rgba(30,20,12,.55), 0 6px 0 3px rgba(30,20,12,.5), 0 14px 26px rgba(0,0,0,.3), inset 0 3px 0 rgba(255,255,255,.25); text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.big.sec{background:linear-gradient(#fffaf0,#f0dfbf); color:var(--ink); border-color:#fffaf0; font:800 16px/1 var(--ui); text-shadow:none;
+  box-shadow:0 0 0 3px rgba(30,20,12,.45), 0 6px 0 3px rgba(30,20,12,.35), 0 12px 22px rgba(0,0,0,.2)}
+.big.teal{background:radial-gradient(120% 140% at 50% 0%, #5b9aa0, #1f6a6a 60%, #0f3c3d)}
+.big:active{transform:translateY(4px) scale(.98); filter:brightness(1.08)}
+.big:disabled{filter:grayscale(.8) brightness(.9)}
+/* level map */
+.levels{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:8px}
+.lv{position:relative; border:none; border-radius:18px; padding:8px 6px 9px; background:#fffaf0; box-shadow:0 0 0 2px rgba(43,29,20,.18), 0 4px 0 rgba(43,29,20,.2);
+  display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; min-height:132px}
+.lv .n{width:46px; height:46px; border-radius:50%; display:grid; place-items:center; font:400 22px/1 var(--display); color:#fff8e6;
+  background:radial-gradient(circle at 50% 28%, #ef6a4f, #c8372b 60%, #7d1a12); box-shadow:0 0 0 3px #fff4dc, 0 0 0 5px rgba(30,20,12,.4)}
+.lv .n svg{width:26px; height:26px}
+.lv.boss .n{background:radial-gradient(circle at 50% 28%, #e7b93a, #a4691a 60%, #5f3a0a)}
+.lv b{font:800 13px/1.15 var(--ui)}
+.lv small{font:500 11px/1.2 var(--ui); color:var(--ink2)}
+.lv .st{display:flex; gap:1px} .lv .st svg{width:15px; height:15px}
+.lv.lock{opacity:.55} .lv.lock .n{background:#a99a80}
+.lv:active:not(.lock){transform:translateY(3px)}
+.lv.next{box-shadow:0 0 0 3px var(--red), 0 4px 0 rgba(43,29,20,.2)}
+/* power card */
+.powerCard{display:flex; gap:14px; align-items:center}
+.powerCard .orb{width:96px; height:96px; flex:none; border-radius:50%; display:grid; place-items:center; border:4px solid #fff4dc;
+  box-shadow:0 0 0 4px rgba(30,20,12,.5), 0 8px 0 3px rgba(30,20,12,.35); animation:orb 2.4s ease-in-out infinite}
+.powerCard .orb svg{width:56%; height:56%; filter:drop-shadow(0 2px 0 rgba(0,0,0,.35))}
+@keyframes orb{50%{transform:translateY(-5px) rotate(-4deg)}}
+.how{display:block; background:#fffaf0; border-radius:14px; padding:8px 12px; font:500 14px/1.4 var(--ui); text-wrap:pretty}
+.how b{font-weight:800; color:var(--red2)}
+.how kbd{font:800 12px var(--ui); background:var(--paper2); border-radius:6px; padding:1px 6px}
+/* results */
+.stars{display:flex; justify-content:center; gap:10px; margin:2px 0}
+.stars svg{width:56px; height:56px; transform:scale(0); transition:transform .35s cubic-bezier(.2,1.6,.4,1)}
+.stars svg.on{transform:scale(1)}
+.stat{display:flex; justify-content:space-between; gap:12px; background:#fffaf0; border-radius:14px; padding:8px 14px; font:800 15px var(--ui)}
+.stars + .lead{text-align:center}
+
+/* ================= title ================= */
+#title{position:fixed; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+  padding:0 max(20px, var(--sr)) calc(16px + var(--sb)) max(20px, var(--sl));
+  background:linear-gradient(to bottom, rgba(255,240,210,0) 40%, rgba(30,20,12,.55))}
+#logo{position:absolute; top:calc(4vh + var(--st)); left:16px; right:16px; text-align:center}
+#logo h1{margin:0; font:400 clamp(48px,15vh,92px)/.95 var(--display); color:#fff8e6; -webkit-text-stroke:4px #2b1d14; paint-order:stroke fill;
+  text-shadow:0 6px 0 #2b1d14, 0 6px 0 #2b1d14, 0 18px 40px rgba(0,0,0,.3); animation:float 4s ease-in-out infinite}
+#logo h1 em{font-style:normal; color:#ffcf6b}
+#logo p{margin:8px auto 0; max-width:440px; width:max-content; padding:5px 14px; border-radius:14px; background:rgba(30,20,12,.42); backdrop-filter:blur(2px); font:700 clamp(13px,3.6vh,17px)/1.4 var(--ui); color:#fff8e6; text-shadow:0 2px 4px rgba(0,0,0,.65); text-wrap:balance}
+@keyframes float{50%{transform:translateY(-6px) rotate(-1deg)}}
+#dedic{position:relative; margin:0 0 12px; padding:8px 26px 9px; background:linear-gradient(#e0473a,#b52d22); color:#fff8e6; text-align:center;
+  font:400 clamp(17px,4.8vh,24px)/1.15 var(--display); box-shadow:0 0 0 3px #fff4dc, 0 0 0 6px rgba(30,20,12,.5), 0 8px 18px rgba(0,0,0,.3);
+  border-radius:6px; animation:ribbon .9s cubic-bezier(.2,1.4,.4,1) .3s both}
+#dedic small{display:block; font:700 11.5px/1.2 var(--ui); opacity:.9; letter-spacing:.02em}
+#dedic:before,#dedic:after{content:''; position:absolute; top:10px; width:20px; height:100%; background:#8d1f17; z-index:-1}
+#dedic:before{right:-14px; clip-path:polygon(0 0,100% 0,70% 50%,100% 100%,0 100%)}
+#dedic:after{left:-14px; clip-path:polygon(0 0,100% 0,100% 100%,0 100%,30% 50%)}
+@keyframes ribbon{from{transform:scale(.4) rotate(-6deg); opacity:0}}
+.tbtns{display:flex; gap:12px; width:min(520px,100%)}
+.tbtns .big{flex:1}
+#loadbar{width:min(420px,100%); height:12px; border-radius:10px; background:rgba(251,240,220,.35); overflow:hidden; margin-bottom:10px; box-shadow:0 0 0 2px rgba(30,20,12,.35)}
+#loadfill{height:100%; width:0; background:var(--paper); transition:width .2s}
+#loadtxt{color:#fff8e6; font:700 14px var(--ui); margin-bottom:6px; text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.credit{color:#fff8e6; opacity:.85; font:500 11px/1.4 var(--ui); margin-top:8px; text-align:center; text-shadow:0 1px 3px rgba(0,0,0,.7)}
+#fade{position:fixed; inset:0; background:#140e08; opacity:0; pointer-events:none; z-index:25; transition:opacity .6s; display:flex; align-items:center; justify-content:center;
+  color:#fff1d6; font:400 28px/1.4 var(--display); text-align:center; padding:24px}
+
+/* short screens (phones sideways): tighter */
+@media (max-height:420px){
+  #btns{transform:scale(.84)}
+  #stick{left:calc(18px + var(--sl) + 54px); bottom:calc(18px + var(--sb) + 54px); width:108px; height:108px; margin:0 0 -54px -54px}
+  .levels{gap:6px} .lv{min-height:118px; padding:6px 4px} .lv .n{width:40px; height:40px; font-size:19px}
+  .powerCard .orb{width:78px; height:78px}
+  .stars svg{width:46px; height:46px}
+}
+@media (max-height:340px){ #btns{transform:scale(.74)} }
+@media (min-height:600px) and (min-width:900px){ #btns{transform:scale(1.08)} }
+/* phone held upright: ask to turn it sideways */
+#rotate{position:fixed; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px;
+  background:radial-gradient(circle at 50% 40%, #e0473a, #7d1a12); color:#fff8e6; text-align:center}
+#rotate svg{width:96px; height:96px; animation:turn 2.2s ease-in-out infinite}
+#rotate b{font:400 30px/1.2 var(--display)}
+#rotate span{font:600 16px/1.45 var(--ui); max-width:280px; opacity:.92}
+@keyframes turn{0%,20%{transform:rotate(0)}50%,80%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+@media (orientation:portrait) and (pointer:coarse){ #rotate{display:flex} }
+@media (hover:hover) and (pointer:fine){ #stickZone{display:none} }
+@media (prefers-reduced-motion:reduce){ #logo h1,#bStorm,#bStorm > svg.ico{animation:none} .pop,#banner div{animation-duration:.01s} }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+
+<div id="hud" class="hidden">
+  <div id="top">
+    <div id="card">
+      <div id="hearts"></div>
+      <div id="meters">
+        <div class="meter" id="energy" aria-label="אנרגיה"><i></i><b>אנרגיה</b></div>
+        <div class="meter hidden" id="storm" aria-label="סערה"><i></i><b>סערה</b></div>
+      </div>
+      <div id="coins"><svg viewBox="0 0 24 24"><use href="#iGear"/></svg><span id="coinN">0</span></div>
+    </div>
+    <div id="lvlChip"></div>
+    <button class="iconBtn" id="bPause" aria-label="הפסקה"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="5" height="16" rx="2" fill="currentColor"/><rect x="14" y="4" width="5" height="16" rx="2" fill="currentColor"/></svg></button>
+  </div>
+  <div id="bossBar" class="hidden"><span>מלך השעונים</span><div class="meter"><i></i></div></div>
+  <div id="hint" class="off"><svg viewBox="0 0 24 24"><use href="#iSpark"/></svg><span id="hintT"></span></div>
+  <div id="pops"></div>
+  <div id="banner"></div>
+</div>
+
+<div id="controls" class="hidden">
+  <div id="stickZone"><div id="stick"><i class="ch l"></i><i class="ch r"></i><div id="knob"></div><span class="tag">ריצה</span></div></div>
+  <div id="btns">
+    <button class="cbtn" id="bPunch" aria-label="אגרוף"><svg class="ico" viewBox="0 0 48 48"><use href="#iFist"/></svg><span class="tag" id="punchLbl">אגרוף</span></button>
+    <button class="cbtn" id="bJump" aria-label="קפיצה"><svg class="ico" viewBox="0 0 48 48"><use href="#iJump" id="jumpIco"/></svg><span class="tag" id="jumpLbl">קפיצה</span></button>
+    <button class="cbtn hidden" id="bFire" aria-label="כדור אש"><svg class="ring" viewBox="0 0 84 84"><circle cx="42" cy="42" r="39" pathLength="100"/></svg><svg class="ico" viewBox="0 0 48 48"><use href="#iFire"/></svg><span class="tag">אש</span></button>
+    <button class="cbtn hidden" id="bIce" aria-label="קרח"><svg class="ring" viewBox="0 0 84 84"><circle cx="42" cy="42" r="39" pathLength="100"/></svg><svg class="ico" viewBox="0 0 48 48"><use href="#iIce"/></svg><span class="tag">קרח</span></button>
+    <button class="cbtn hidden" id="bBolt" aria-label="ברק"><svg class="ring" viewBox="0 0 84 84"><circle cx="42" cy="42" r="39" pathLength="100"/></svg><svg class="ico" viewBox="0 0 48 48"><use href="#iBolt"/></svg><span class="tag">ברק</span></button>
+    <button class="cbtn hidden" id="bStorm" aria-label="סערת כוחות"><svg class="ico" viewBox="0 0 48 48"><use href="#iStorm"/></svg><span class="tag">סערה!</span></button>
+  </div>
+</div>
+
+<div id="title">
+  <div id="logo"><h1>סערת <em>כוחות</em></h1><p>רובוטי השעון השתלטו על העיר. אספו את גבישי הכוח, למדו אש, תעופה, קרח וברק, ועצרו את מלך השעונים!</p></div>
+  <div id="dedic">המשחק מוקדש לעילי שי <svg viewBox="0 0 24 24" fill="#fff8e6" style="width:.8em;height:.8em;vertical-align:-.05em"><use href="#iHeart"/></svg></div>
+  <div id="loadtxt">טוען את העיר…</div>
+  <div id="loadbar"><div id="loadfill"></div></div>
+  <div class="tbtns hidden" id="tbtns">
+    <button class="big" id="bPlay">שחקו</button>
+    <button class="big sec" id="bOpts">הגדרות</button>
+  </div>
+  <div class="credit">משחק מקורי · מודלים ואנימציות בבלנדר · צלילים מספריית Sonniss GDC · מוזיקה מקורית</div>
+</div>
+
+<div id="overlay" class="overlay hidden"></div>
+<div id="fade"></div>
+<div id="rotate" role="alert"><svg viewBox="0 0 96 96" fill="none"><rect x="30" y="12" width="36" height="72" rx="8" stroke="#fff8e6" stroke-width="5"/><circle cx="48" cy="73" r="3.5" fill="#fff8e6"/></svg>
+  <b>סובבו את הטלפון לרוחב</b><span>המשחק בנוי למסך שוכב: ריצה ביד שמאל, אגרוף, קפיצה וכוחות ביד ימין.</span></div>
+
+<!-- icon set -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="iFist" viewBox="0 0 48 48"><path d="M13 20c0-3 2-5 4.5-5S22 17 22 19v-2c0-2.5 2-4 4.3-4s4.2 1.8 4.2 4v1.5c.4-2 2-3.3 4-3.3 2.4 0 4 1.9 4 4.3V30c0 7-5.5 12-12.5 12h-1.6C17.5 42 12 37 12 30.6z" fill="#fff8e6"/><path d="M22 19v8M30.5 18v7.5M17.5 20.5V27" stroke="#c8372b" stroke-width="2.4" stroke-linecap="round"/><path d="M12 31c3-3 8-3.5 12-2" stroke="#c8372b" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M5 18l4 2M4 26h5M6 34l4-2" stroke="#fff8e6" stroke-width="2.6" stroke-linecap="round"/></symbol>
+    <symbol id="iJump" viewBox="0 0 48 48"><path d="M24 7l11 13h-7v9h-8v-9h-7z" fill="#fff8e6"/><path d="M12 36c4 3 8 4.5 12 4.5S32 39 36 36" stroke="#fff8e6" stroke-width="4" stroke-linecap="round" fill="none"/></symbol>
+    <symbol id="iWing" viewBox="0 0 48 48"><path d="M6 30c8-1 14-6 18-15 3 9 2 18-4 23-4 3-10 2-14-8z" fill="#fff8e6"/><path d="M42 30c-8-1-14-6-18-15-3 9-2 18 4 23 4 3 10 2 14-8z" fill="#fff8e6" opacity=".82"/><path d="M14 30c4-1 7-4 9-8M34 30c-4-1-7-4-9-8" stroke="#35615a" stroke-width="2" stroke-linecap="round" fill="none"/></symbol>
+    <symbol id="iFire" viewBox="0 0 48 48"><path d="M25 5c2 7 11 11 11 22 0 8-5.4 14-12 14s-12-5.6-12-13c0-6 3-9 6-12 0 4 1.5 6 4 7-1-7 0-12 3-18z" fill="#fff8e6"/><path d="M24.5 23c1 4 6 6 6 11a6.5 6.5 0 0 1-13 0c0-3 1.6-5 3.5-6.5.2 2.3 1.2 3.6 2.6 4-.6-3.5-.2-6 .9-8.5z" fill="#e0652a"/></symbol>
+    <symbol id="iIce" viewBox="0 0 48 48"><g stroke="#fff8e6" stroke-width="3.6" stroke-linecap="round" fill="none"><path d="M24 5v38M7.5 14.5l33 19M7.5 33.5l33-19"/><path d="M18.5 8l5.5 5 5.5-5M18.5 40l5.5-5 5.5 5M6 21.5l7.2-2.2-1.7-7.2M42 26.5l-7.2 2.2 1.7 7.2M6 26.5l7.2 2.2-1.7 7.2M42 21.5l-7.2-2.2 1.7-7.2"/></g></symbol>
+    <symbol id="iBolt" viewBox="0 0 48 48"><path d="M28 4L10 27h11l-4 17 20-25H26z" fill="#fff8e6" stroke="#94650f" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="iStorm" viewBox="0 0 48 48"><path d="M24 6c9.9 0 18 8.1 18 18 0 6-3 11-7.5 14.3M24 42c-9.9 0-18-8.1-18-18 0-6 3-11 7.5-14.3" stroke="#fff8e6" stroke-width="3.6" stroke-linecap="round" fill="none"/><path d="M26 13l-8 12h6l-2 10 9-13h-6z" fill="#fff8e6"/></symbol>
+    <symbol id="iGear" viewBox="0 0 24 24"><path d="M10.2 2h3.6l.5 2.6 1.9.8 2.2-1.5 2.5 2.5-1.5 2.2.8 1.9 2.6.5v3.6l-2.6.5-.8 1.9 1.5 2.2-2.5 2.5-2.2-1.5-1.9.8-.5 2.6h-3.6l-.5-2.6-1.9-.8-2.2 1.5-2.5-2.5 1.5-2.2-.8-1.9-2.6-.5v-3.6l2.6-.5.8-1.9-1.5-2.2 2.5-2.5 2.2 1.5 1.9-.8z" fill="#e6a93a" stroke="#8a5512" stroke-width="1.2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.4" fill="#fbf0dc" stroke="#8a5512" stroke-width="1.2"/></symbol>
+    <symbol id="iHeart" viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11.2C4 6.6 6.3 4.5 8.9 4.5c1.4 0 2.5.7 3.1 1.7.6-1 1.7-1.7 3.1-1.7 2.6 0 4.9 2.1 4.9 5.3C20 15.8 12 21 12 21z"/></symbol>
+    <symbol id="iStar" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2l-5.9 3.2 1.3-6.5L2.5 9.3l6.6-.8z" stroke="#2b1d14" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+    <symbol id="iSpark" viewBox="0 0 24 24"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z" fill="#ffd77a"/></symbol>
+    <symbol id="iLock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2.5" fill="#fff8e6"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10" stroke="#fff8e6" stroke-width="2.6" fill="none"/></symbol>
+  </defs>
+</svg>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="js/game.js"></script>
+</body>
+</html>
