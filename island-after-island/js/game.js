@@ -1367,7 +1367,6 @@ async function boot() {
     try { await audio.unlock(); } catch (e) { console.warn(e); }
     audio.play('ui_click');
     $('title').classList.add('hidden'); $('hud').classList.remove('hidden'); $('controls').classList.remove('hidden');
-    if (!isTouch) $('keys').classList.remove('hidden');
     mode = 'play'; camPos.copy(player.pos).add(camOffset());
     audio.setMusic('music_explore', 3);
     if (S.built.furnace) startFurnace();

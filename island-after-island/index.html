@@ -137,8 +137,6 @@ button:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
   box-shadow:0 0 0 2px rgba(35,22,10,.5), 0 4px 0 2px rgba(35,22,10,.3), 0 10px 18px rgba(0,0,0,.2)}
 #prompt:after{content:''; position:absolute; bottom:-8px; right:47px; border:8px solid transparent; border-bottom:0; border-top-color:#fff4dc}
 #bEat:not(.hidden) ~ #prompt{bottom:222px}
-#keys{position:absolute; left:calc(14px + var(--sl)); bottom:calc(14px + var(--sb)); color:#fff8e6; font:500 13px/1.4 var(--ui); text-shadow:0 1px 2px rgba(0,0,0,.6)}
-#keys kbd{background:rgba(247,236,214,.92); color:var(--ink); border-radius:6px; padding:1px 6px; font:800 12px var(--ui); box-shadow:0 2px 0 rgba(0,0,0,.25)}
 
 /* ================= sheets & panels ================= */
 .overlay{position:fixed; inset:0; z-index:20; display:flex; align-items:flex-end; justify-content:center; background:rgba(26,18,10,.42); padding:0}
@@ -294,7 +292,6 @@ button:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
     <button class="cbtn hidden" id="bEat" aria-label="לאכול"><svg viewBox="0 0 48 48"><circle cx="17" cy="29" r="9" fill="#fff8e6"/><circle cx="31" cy="29" r="9" fill="#fff8e6"/><circle cx="24" cy="18" r="8" fill="#fff8e6"/><path d="M24 10c2-4 6-5 9-4-2 3-5 4-9 4z" fill="#cfe9a5"/></svg><i id="eatN">0</i><span class="tag">אכלו</span></button>
     <div id="prompt" class="hidden"></div>
   </div>
-  <div id="keys" class="hidden"><kbd>WASD</kbd> הליכה · <kbd>רווח</kbd> פעולה · <kbd>E</kbd> בנייה · <kbd>Q</kbd> לאכול · <kbd>Esc</kbd> תפריט</div>
 </div>
 
 <div id="title">
