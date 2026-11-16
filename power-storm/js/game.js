@@ -248,7 +248,7 @@ class Game {
     this.ui.hearts(); this.ui.powers(); this.ui.meters(); $('coinN').textContent = 0;
     this.music(L.boss || L.prize ? 'music_boss' : 'music_level');
     const amb = {}; for (const a of ['amb_town', 'amb_roof', 'amb_canal', 'amb_factory', 'amb_tower']) amb[a] = a === L.amb ? 1 : 0; this.wantAmb = amb; this.audio.setAmbience(amb);
-    if (!fromCheckpoint) this.ui.banner(L.boss ? 'קרב אחרון!' : L.prize ? 'שלב הפרס' : `שלב ${L.id}`, L.boss ? 'הכו בלב שלו כשהחזה נפתח' : L.prize ? 'השלב הבלתי אפשרי' : L.name);
+    if (!fromCheckpoint) this.ui.banner(L.boss ? 'קרב אחרון!' : L.prize ? 'שלב הפרס' : `שלב ${L.id}`, L.boss ? 'הכו בלב שלו כשהחזה נפתח' : L.prize ? 'תפסו את גלגל הזהב!' : L.name);
     this.camSnap = true;
     if (L.boss) this.bossIntro();
   }
@@ -455,12 +455,11 @@ class Game {
   addPrize(p) {
     const m = this.model('gear_coin', p.x, p.y, .3); const s = Assets.size('gear_coin'); m.scale.setScalar(1.6 / (Math.max(s.x, s.y) || .3));
     const light = new THREE.PointLight(0xffd27a, 4, 9, 2); this.scene.add(light);
-    const TAUNTS = ['נו, תתפסו אותי!', 'כמעט… ממש כמעט!', 'אף אחד עוד לא תפס אותי', 'גלגל הזהב בורח!', 'אולי בניסיון הבא?', 'מהר יותר! עוד יותר!'];
+    const TAUNTS = ['נו, תתפסו אותי!', 'כמעט… ממש כמעט!', 'גלגל הזהב בורח!', 'מהר יותר! עוד יותר!', 'עוד קצת!'];
     return this.obj({ type: 'prize', x: p.x, y: p.y, model: m, light, t: 0, tauntT: 4, k: 0,
       dispose() { window.__game.scene.remove(this.light); },
       update(dt, g) {
         const pl = g.player; this.t += dt; this.tauntT -= dt;
-        // impossible by design: the gear never lets the hero within its lead distance, whatever the speed
         const lead = 6.5;
         const was = this.x;
         this.x = Math.max(this.x + .5 * dt, pl.x + lead);
@@ -484,7 +483,7 @@ class Game {
       return true;
     } });
   }
-  /** the prize screen - only reachable by catching the golden gear (which the gear makes impossible) */
+  /** the prize screen, shown when the golden gear is caught */
   async prizeWin() {
     if (this.prizeShown) return; this.prizeShown = true; this.mode = 'won';
     this.save.prizeWon = true; writeSave(this.save);
@@ -745,7 +744,7 @@ class Game {
       const pw = L.reward ? `<span class="pwb" style="background:${pcol[L.reward]}"><svg viewBox="0 0 48 48"><use href="#${icons[L.reward]}"/></svg></span>` : '';
       const row = lock ? `<svg class="lk" viewBox="0 0 24 24"><use href="#iLockD"/></svg>` : stars + pw;
       const next = !lock && !s.stars[L.id] ? ' next' : '';
-      if (L.prize) return `<button class="lv prize${lock ? ' lock' : ''}" data-id="${L.id}" ${lock ? 'disabled' : ''}><span class="n">?</span><b>${L.name}</b><span class="st">${lock ? `<svg class="lk" viewBox="0 0 24 24"><use href="#iLockD"/></svg>` : `<small class="tries">${s.prizeTries ? 'ניסיונות: ' + s.prizeTries : 'בלתי אפשרי'}</small>`}</span></button>`;
+      if (L.prize) return `<button class="lv prize${lock ? ' lock' : ''}" data-id="${L.id}" ${lock ? 'disabled' : ''}><span class="n">?</span><b>${L.name}</b><span class="st">${lock ? `<svg class="lk" viewBox="0 0 24 24"><use href="#iLockD"/></svg>` : `<small class="tries">${s.prizeTries ? 'ניסיונות: ' + s.prizeTries : 'הפרס מחכה'}</small>`}</span></button>`;
       return `<button class="lv${lock ? ' lock' : ''}${L.boss ? ' boss' : ''}${next}" data-id="${L.id}" ${lock ? 'disabled' : ''}>${L.boss ? '<span class="crown">♛</span>' : ''}<span class="n">${L.id}</span><b>${L.name}</b><span class="st">${row}</span></button>`;
     }).join('');
     this.panel(`<div class="phead"><h2>בחרו שלב</h2><button class="close" id="mClose" aria-label="סגירה">×</button></div>
