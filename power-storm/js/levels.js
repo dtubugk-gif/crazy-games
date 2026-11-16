@@ -124,7 +124,7 @@ export const LEVELS = [
     sky: { top: 0x5a8fc4, mid: 0xb7cfe0, hor: 0xf7d9a8, sun: [-0.55, 0.5, 0.4], sunCol: 0xffe2b0, sunI: 2.9, hemi: [0xe6eef8, 0x806048, 1.2], fog: 0xe6dccb, fogD: [36, 150] } },
   { id: 4, name: 'מפעל השעונים', sub: 'הלב של הרובוטים', theme: 'factory', spawn: [-12, 0], pieces: L4, reward: 'bolt', amb: 'amb_factory', steps: 'step_metal', len: [-16, 180],
     sky: { top: 0x6f7fa8, mid: 0xd9a77c, hor: 0xf2b77a, sun: [0.6, 0.32, 0.45], sunCol: 0xffc890, sunI: 2.7, hemi: [0xf2d8c0, 0x5a4636, 1.15], fog: 0xd8a983, fogD: [30, 130] } },
-  { id: 5, name: 'ראש המגדל', sub: 'מלך השעונים', theme: 'tower', spawn: [-10, 0], pieces: L5, boss: true, amb: 'amb_tower', steps: 'step_stone', len: [-13, 13],
+  { id: 5, name: 'ראש המגדל', sub: 'מלך השעונים', theme: 'tower', spawn: [-7.5, 0], pieces: L5, boss: true, amb: 'amb_tower', steps: 'step_stone', len: [-13, 13],
     sky: { top: 0x45507e, mid: 0xc67c62, hor: 0xf3a865, sun: [0.75, 0.22, 0.35], sunCol: 0xffb87a, sunI: 2.6, hemi: [0xf0c8b0, 0x4a3a30, 1.1], fog: 0xcf8f73, fogD: [40, 160] } },
 ];
 

@@ -864,7 +864,7 @@ class Game {
     const cam = this.camera, asp = cam.aspect;
     const tanH = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
     let tx, ty, dist;
-    if (L?.boss) { dist = clamp(13.8 / (tanH * asp), 15, 30); tx = 0; ty = 3.3 + Math.max(0, (p.y - 3) * .4); }
+    if (L?.boss) { dist = clamp(13.8 / (tanH * asp), 15, 30); tx = .4; ty = 2.3 + Math.max(0, (p.y - 3) * .4); }
     else {
       dist = 11.8 * clamp(1.9 / asp, .9, 1.25);
       this.lookAhead = (this.lookAhead ?? 0) + ((p.facing * 2.4 + p.vx * .25) - (this.lookAhead ?? 0)) * Math.min(1, dt * 2.2);
