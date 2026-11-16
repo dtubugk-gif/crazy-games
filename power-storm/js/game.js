@@ -97,7 +97,7 @@ class UI {
     $('energy').firstElementChild.style.transform = `scaleX(${g.energy / 100})`;
     $('energy').classList.toggle('low', g.energy < 20);
     const anyPower = g.save.powers.fire || g.save.powers.wind;
-    $('storm').classList.toggle('hidden', !anyPower);
+    $('stormRow').classList.toggle('hidden', !anyPower);
     $('storm').firstElementChild.style.transform = `scaleX(${g.storm})`;
     $('storm').classList.toggle('full', g.storm >= 1);
     $('bStorm').classList.toggle('hidden', !(g.storm >= 1 && anyPower));
@@ -196,8 +196,8 @@ class Game {
     this.mode = 'title';
     this.loadWorld(LEVELS[0]);
     this.player = new Player(this); this.scene.add(this.player.model);
-    this.player.reset(-6.5, 0); this.player.facing = 1; this.player.anim.play('idle');
-    const bots = [new Bot(this, -1.2, 0, { range: [-1.2, -1.2] }), new Drone(this, 1.6, 3.2, { range: [1.6, 1.6] })];
+    this.player.reset(-6.9, 0); this.player.facing = 1; this.player.anim.play('idle');
+    const bots = [new Bot(this, -1.4, 0, { range: [-1.4, -1.4] }), new Drone(this, -.2, 2.35, { range: [-.2, -.2] })];
     for (const b of bots) { this.scene.add(b.model); this.enemies.push(b); }
     this.titleT = 0;
     this.music('music_title');
@@ -687,16 +687,18 @@ class Game {
     if (this.mode !== 'title') { /* from pause/results */ }
     const s = this.save;
     const icons = { fire: 'iFire', wind: 'iWing', ice: 'iIce', bolt: 'iBolt' };
+    const pcol = { fire: '#e0652a', wind: '#6f9e94', ice: '#5b9cc0', bolt: '#d9a32a' };
     const cards = LEVELS.map(L => {
       const lock = L.id > s.unlocked, st = s.stars[L.id] || 0;
-      const stars = [0, 1, 2].map(i => `<svg viewBox="0 0 24 24" fill="${i < st ? '#e6a93a' : '#e4cfa6'}"><use href="#iStar"/></svg>`).join('');
-      const ico = lock ? `<svg viewBox="0 0 24 24"><use href="#iLock"/></svg>` : (L.reward ? `<svg viewBox="0 0 48 48"><use href="#${icons[L.reward]}"/></svg>` : 'עז');
+      const stars = [0, 1, 2].map(i => `<svg viewBox="0 0 24 24" fill="${i < st ? '#e6a93a' : '#fffaf0'}"><use href="#iStar"/></svg>`).join('');
+      const pw = L.reward ? `<span class="pwb" style="background:${pcol[L.reward]}"><svg viewBox="0 0 48 48"><use href="#${icons[L.reward]}"/></svg></span>` : '';
+      const row = lock ? `<svg class="lk" viewBox="0 0 24 24"><use href="#iLockD"/></svg>` : stars + pw;
       const next = !lock && !s.stars[L.id] ? ' next' : '';
-      return `<button class="lv${lock ? ' lock' : ''}${L.boss ? ' boss' : ''}${next}" data-id="${L.id}" ${lock ? 'disabled' : ''}><span class="n">${lock ? ico : (L.boss ? '♛' : L.id)}</span><b>${L.name}</b><small>${lock ? 'נעול' : (L.reward ? 'כוח: ' + POWERS[L.reward].name : L.sub)}</small><span class="st">${stars}</span></button>`;
+      return `<button class="lv${lock ? ' lock' : ''}${L.boss ? ' boss' : ''}${next}" data-id="${L.id}" ${lock ? 'disabled' : ''}>${L.boss ? '<span class="crown">♛</span>' : ''}<span class="n">${L.id}</span><b>${L.name}</b><span class="st">${row}</span></button>`;
     }).join('');
     this.panel(`<div class="phead"><h2>בחרו שלב</h2><button class="close" id="mClose" aria-label="סגירה">×</button></div>
       <div class="pbody"><div class="levels">${cards}</div>
-      <p class="lead" style="text-align:center;font-size:13px;color:var(--ink2)">בכל שלב מחכה גביש כוח חדש. אספו 75% מגלגלי השיניים ושמרו על הלבבות בשביל 3 כוכבים.</p></div>`, o => {
+      <p class="lead" style="text-align:center;font:700 13.5px/1.4 var(--ui);color:var(--ink)">בכל שלב מחכה כוח חדש</p><p class="lead" style="text-align:center;font-size:12px;color:var(--ink2);margin-top:-6px">3 כוכבים: לסיים, לאסוף 75% מגלגלי השיניים ולשמור על הלבבות</p></div>`, o => {
       o.querySelectorAll('.lv:not(.lock)').forEach(b => b.onclick = () => { this.audio.play('ui_click'); this.goFullscreen(); this.startLevel(+b.dataset.id); });
       $('mClose').onclick = () => { this.audio.play('ui_back'); this.closePanel(); if (this.mode !== 'title') this.toTitle(); };
     });
@@ -809,13 +811,14 @@ class Game {
   }
   titleFrame(dt) {
     this.titleT += dt; const t = this.titleT;
-    this.player.anim.update(dt); this.player.model.rotation.y = .55 + Math.sin(t * .4) * .1;
-    for (const e of this.enemies) { e.anim.update(dt); e.model.rotation.y = -.7; if (e.kind === 'drone') e.model.position.y = 3 + Math.sin(t * 2) * .2; }
+    this.player.anim.update(dt); this.player.model.rotation.y = .45 + Math.sin(t * .4) * .08;
+    for (const e of this.enemies) { e.anim.update(dt); e.model.rotation.y = -.6; if (e.kind === 'drone') e.model.position.y = 2.2 + Math.sin(t * 2) * .15; }
     for (const a of this.world.anims) a.update(dt);
     if (Math.random() < .08) this.fx.add.emit({ x: -6.5 + rnd(-.6, .6), y: rnd(.2, 2), z: .4, vy: rnd(.3, .9), life: 1, size: .1, c0: C.bolt0, c1: C.fire1 });
     this.fx.update(dt);
-    const cx = -3 + Math.sin(t * .15) * .8;
-    this.camera.position.set(cx, 2.2, 10.5); this.camera.lookAt(cx, 2.1, 0);
+    // hero on the left, robots on the right, framed between the logo and the buttons (like the Dreamlet reference)
+    const cx = -4.15 + Math.sin(t * .15) * .12, d = 7.2 * Math.max(1, 1.9 / this.camera.aspect);
+    this.camera.position.set(cx, 1.05, d); this.camera.lookAt(cx, 1.05, 0);
   }
   playFrame(dt, inp) {
     if (this.stopT > 0) { this.stopT -= dt; dt *= .05; }
