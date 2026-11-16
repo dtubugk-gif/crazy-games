@@ -27,12 +27,12 @@ export function makeScene(renderer) {
   // sky dome: three-stop gradient + painted clouds layer (warm daylight, no neon)
   const skyMat = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, fog: false,
-    uniforms: { top: { value: new THREE.Color() }, mid: { value: new THREE.Color() }, hor: { value: new THREE.Color() }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color() } },
+    uniforms: { top: { value: new THREE.Color() }, mid: { value: new THREE.Color() }, hor: { value: new THREE.Color() }, low: { value: new THREE.Color() }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color() } },
     vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
-    fragmentShader: `uniform vec3 top, mid, hor, sunCol; uniform vec3 sunDir; varying vec3 vP;
+    fragmentShader: `uniform vec3 top, mid, hor, low, sunCol; uniform vec3 sunDir; varying vec3 vP;
       void main(){ float h = vP.y; vec3 c = mix(hor, mid, smoothstep(-0.02, 0.22, h)); c = mix(c, top, smoothstep(0.2, 0.75, h));
         float s = max(dot(normalize(vP), normalize(sunDir)), 0.); c += sunCol * (pow(s, 600.) * 1.6 + pow(s, 12.) * 0.18);
-        c = mix(c, hor * 0.92, smoothstep(0.0, -0.25, h)); gl_FragColor = vec4(c, 1.); }`,
+        c = mix(c, low, smoothstep(0.0, -0.28, h)); gl_FragColor = vec4(c, 1.); }`,
   });
   const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), skyMat);
   sky.renderOrder = -10; scene.add(sky);
@@ -58,6 +58,7 @@ export function makeScene(renderer) {
     scene, sky, skyMat, clouds, hemi, sun, fill,
     setSky(s) {
       skyMat.uniforms.top.value.setHex(s.top); skyMat.uniforms.mid.value.setHex(s.mid); skyMat.uniforms.hor.value.setHex(s.hor);
+      if (s.low != null) skyMat.uniforms.low.value.setHex(s.low); else skyMat.uniforms.low.value.setHex(s.hor).multiplyScalar(.92);
       const d = new THREE.Vector3(...s.sun).normalize(); skyMat.uniforms.sunDir.value.copy(d); skyMat.uniforms.sunCol.value.setHex(s.sunCol);
       this.sunDir = d; sun.color.setHex(s.sunCol); sun.intensity = s.sunI;
       hemi.color.setHex(s.hemi[0]); hemi.groundColor.setHex(s.hemi[1]); hemi.intensity = s.hemi[2];
@@ -110,7 +111,7 @@ export function makeWater(x0, x1) {
 
 // ---------------------------------------------------------------- level build
 const KIT = { street: 'ground_street', roof: 'roof_block', quay: 'canal_quay', factory: 'factory_floor', tower: 'tower_top' };
-const THEME_KIT = { town: 'street', roof: 'roof', canal: 'quay', factory: 'factory', tower: 'tower' };
+const THEME_KIT = { town: 'street', roof: 'roof', canal: 'quay', factory: 'factory', tower: 'tower', prize: 'street' };
 const PLAT = { wood: ['plat_wood', 3.0], stone: ['plat_stone', 2.0], awning: ['plat_awning', 2.5], metal: ['plat_metal', 3.0] };
 
 function put(group, name, x, y, z, o = {}) {
@@ -221,7 +222,7 @@ function backdrop(group, L, R, anims) {
   const far = (y = -4, z = -78, s = 1.6) => { const w = (Assets.size('skyline_far').x || 80) * s; for (let x = a - 40; x < b + 60; x += w * 0.98) put(group, 'skyline_far', x, y, z, { s, noShadow: true, noRecv: true }); };
   const tower = (x, y, z, s = 1) => put(group, 'clocktower_bg', x, y, z, { s, noShadow: true, noRecv: true });
 
-  if (L.theme === 'town') {
+  if (L.theme === 'town' || L.theme === 'prize') {
     row(-4.3, 0, facades, 0.1, 0.9);
     row(-15, 2.4, facades, 0.4, 2.5, 1.05);
     far(-2, -70, 1.6); tower(a + span * 0.72, 1, -95, 1.2);

@@ -104,6 +104,22 @@ deco('pipe_run', 12, -2.4); deco('steam_vent', 18, -1.8); deco('pipe_run', 58, -
 deco('barrel', 2, -1.6); deco('crate', 44, -1.8); deco('barrel', 140, -1.6);
 const L4 = take();
 
+// ---------------------------------------------------------------- 6. the prize level (unlocks after the boss) - impossible by design:
+// the golden gear always stays >= 6.5 m ahead of the hero (faster than run or flight), and after x=200 the road ends in an
+// endless chasm where flight energy runs out. A hard gauntlet first so it feels like a real level.
+G(-16, 40); G(44.5, 72); G(76.5, 104); G(108.5, 136); G(140.5, 168); G(172.5, 200);
+hint(-10, 'prize'); E('prize', -5.5, 1.2);
+E('bot', 14, 0, { range: [9, 19] }); E('brute', 31, 0, { range: [27, 36] }); crate(38.6); coinRow(41, 2.2, 3);
+E('drone', 52, 4.2, { range: [47, 57] }); E('drone', 60, 5, { range: [56, 66] }); E('brute', 66, 0, { range: [62, 70] });
+coinArc(71.5, 2, 4, 5, 1.6); E('bot', 84, 0, { range: [79, 88] }); E('bot', 91, 0, { range: [88, 95] }); E('drone', 97, 4.4, { range: [93, 102] });
+E('brute', 101, 0, { range: [98, 103] }); check(111); heart(112, 1.3);
+E('drone', 119, 4.6, { range: [114, 124] }); E('drone', 127, 3.8, { range: [123, 132] }); E('brute', 131, 0, { range: [127, 135] });
+coinArc(135.5, 2.2, 4, 5, 1.6); E('bot', 147, 0, { range: [143, 151] }); E('bot', 153, 0, { range: [150, 157] }); E('brute', 161, 0, { range: [157, 166] });
+E('drone', 167, 4.8, { range: [163, 171] }); check(175); E('bot', 186, 0, { range: [181, 190] }); E('drone', 193, 4.4, { range: [188, 198] });
+P.push({ t: 'gearrain', x: 40 });
+deco('lamp', 6, -1.6); deco('tree', 20, -3.0); deco('lamp', 56, -1.6); deco('market_stall', 88, -2.4); deco('lamp', 120, -1.6); deco('well', 150, -2.4); deco('lamp', 184, -1.6); deco('tree', 196, -3.0);
+const L6 = take();
+
 // ---------------------------------------------------------------- 5. boss: top of the clock tower
 G(-13, 13, 0, 'tower');
 const L5 = take();
@@ -126,6 +142,8 @@ export const LEVELS = [
     sky: { top: 0x6f7fa8, mid: 0xd9a77c, hor: 0xf2b77a, sun: [0.6, 0.32, 0.45], sunCol: 0xffc890, sunI: 2.7, hemi: [0xf2d8c0, 0x5a4636, 1.15], fog: 0xd8a983, fogD: [30, 130] } },
   { id: 5, name: 'ראש המגדל', sub: 'מלך השעונים', theme: 'tower', spawn: [-7.5, 0], pieces: L5, boss: true, amb: 'amb_tower', steps: 'step_stone', len: [-13, 13],
     sky: { top: 0x45507e, mid: 0xc67c62, hor: 0xf3a865, sun: [0.75, 0.22, 0.35], sunCol: 0xffb87a, sunI: 2.6, hemi: [0xf0c8b0, 0x4a3a30, 1.1], fog: 0xcf8f73, fogD: [40, 160] } },
+  { id: 6, name: 'שלב הפרס', sub: 'השלב הבלתי אפשרי', theme: 'prize', prize: true, spawn: [-12, 0], pieces: L6, amb: 'amb_tower', steps: 'step_stone', len: [-16, 640],
+    sky: { top: 0x3a4a7c, mid: 0xb08a96, hor: 0xf1c79a, sun: [-0.6, 0.22, 0.4], sunCol: 0xffc488, sunI: 2.6, hemi: [0xeed6c8, 0x463a40, 1.1], fog: 0xe0c2aa, fogD: [50, 170], low: 0x221d36 } },
 ];
 
 export const HINTS = {
@@ -145,4 +163,5 @@ export const HINTS = {
   boltgen: { t: 'השער נעול. זרקו <b>ברק</b> על הגנרטור', pc: 'זרקו <b>ברק</b> (I) על הגנרטור' },
   vent: { t: 'פתח אדים! עברו כשהוא שקט', pc: 'פתח אדים! עברו כשהוא שקט' },
   lift: { t: 'ברק על הגנרטור מפעיל את <b>המעלית</b>', pc: 'ברק על הגנרטור מפעיל את <b>המעלית</b>' },
+  prize: { t: 'השלב הבלתי אפשרי! תפסו את <b>גלגל הזהב</b>, ורק אז תגלו מה הפרס', pc: 'השלב הבלתי אפשרי! תפסו את <b>גלגל הזהב</b>, ורק אז תגלו מה הפרס' },
 };

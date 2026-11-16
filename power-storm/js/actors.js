@@ -732,11 +732,12 @@ export class BossGear {
   update(dt) {
     const g = this.g, p = g.player; this.life -= dt;
     this.vy += GRAV * .8 * dt; this.x += this.vx * dt; this.y += this.vy * dt;
-    if (this.y < this.r) { this.y = this.r; this.vy = Math.abs(this.vy) > 3 ? -this.vy * .45 : 0; if (Math.abs(this.vy) > 1) { g.audio.play('bullet_hit', { pitch: .5, vol: .6 }); g.fx.dust(this.x, 0, 5); } }
+    const fl = g.floorBelow(this.x, this.y + .2) ?? -99;
+    if (this.y - this.r < fl) { this.y = fl + this.r; this.vy = Math.abs(this.vy) > 3 ? -this.vy * .45 : 0; if (Math.abs(this.vy) > 1) { g.audio.play('bullet_hit', { pitch: .5, vol: .6 }); g.fx.dust(this.x, fl, 5); } }
     this.mesh.position.set(this.x, this.y, 0); this.mesh.rotation.z -= this.vx * dt / this.r;
     this.whirr?.setPos(V.set(this.x, this.y, 0));
     if (!p.dead && Math.abs(p.x - this.x) < this.r + .25 && p.y < this.y + this.r && p.y + p.h > this.y - this.r) { p.hurt(this.x); this.vx *= -.3; }
-    if (this.life <= 0 || this.x < -14 || this.x > 14) this.pop();
+    if (this.life <= 0 || this.x < g.L.len[0] - 1 || this.x > g.L.len[1] + 1 || this.y < g.world.killY) this.pop();
   }
   hit(dmg) { this.hp -= dmg; this.g.fx.sparks(this.x, this.y, 10); if (this.hp <= 0) this.pop(true); else this.vx *= -.6; return true; }
   pop(broken) {

@@ -35,6 +35,7 @@ export const THEME_MODELS = {
   canal: ['canal_quay', 'canal_quay_end_L', 'canal_quay_end_R', 'canal_far_wall', 'bridge_arch', 'boat', 'mooring_post', 'lamp', 'plat_stone', 'ice_slab', ...FACADES],
   factory: ['factory_floor', 'factory_floor_end_L', 'factory_floor_end_R', 'factory_wall_bg', 'pipe_run', 'conveyor', 'steam_vent', 'plat_metal', 'generator', 'gate', 'lift', 'skyline_far', 'clocktower_bg'],
   tower: ['tower_top', 'skyline_far', 'boss', 'boss_gear'],
+  prize: ['ground_street', 'ground_end_L', 'ground_end_R', ...FACADES, 'lamp', 'tree', 'market_stall', 'well', 'boss_gear'],
 };
 
 export const Assets = {

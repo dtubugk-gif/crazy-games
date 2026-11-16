@@ -177,7 +177,7 @@ body.boss #banner{top:36%}
 .big:active{transform:translateY(4px) scale(.98); filter:brightness(1.08)}
 .big:disabled{filter:grayscale(.8) brightness(.9)}
 /* level map */
-.levels{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:8px}
+.levels{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:7px}
 .lv{position:relative; border:none; border-radius:14px; padding:10px 6px 10px; background:linear-gradient(#fffcf4,#f7ead0);
   box-shadow:inset 0 0 0 2px #fffdf8, 0 0 0 2px #b8946a, 0 4px 0 1px rgba(90,60,30,.28);
   display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:6px; text-align:center; min-height:138px}
@@ -188,6 +188,9 @@ body.boss #banner{top:36%}
 .lv .st .lk{width:24px; height:24px}
 .lv .pwb{width:23px; height:23px; margin-inline-start:3px; border-radius:50%; display:grid; place-items:center; box-shadow:0 0 0 2px #fff8ea, 0 0 0 3.5px #3a2412}
 .lv .pwb svg{width:15px; height:15px}
+.lv.prize{background:linear-gradient(#fff3c8,#f1cf72); box-shadow:inset 0 0 0 2px #fffbe8, 0 0 0 2.5px #a4691a, 0 4px 0 1px rgba(90,60,30,.3)}
+.lv.prize .n{background:radial-gradient(circle at 50% 30%, #ffe9a8, #e6a93a 70%, #a4691a); color:#3a2208}
+.lv .tries{font:800 11px/1.1 var(--ui); color:#7a4d0c}
 .lv .crown{position:absolute; top:6px; left:6px; width:24px; height:24px; border-radius:50%; background:radial-gradient(circle at 50% 30%, #ffd77a, #d49a26 70%, #8a5a12);
   box-shadow:0 0 0 2px #3a2412; display:grid; place-items:center; font:400 14px/1 var(--display); color:#3a2208}
 .lv.lock{filter:grayscale(.65); opacity:.78} .lv.lock .n{color:#6b5a48}
@@ -261,6 +264,10 @@ body.boss #banner{top:36%}
 @keyframes turn{0%,20%{transform:rotate(0)}50%,80%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
 @media (orientation:portrait) and (pointer:coarse){ #rotate{display:flex} }
 @media (hover:hover) and (pointer:fine){ #stickZone{display:none} }
+/* the prize screen (only after catching the golden gear) */
+#prizeWin{position:fixed; inset:0; z-index:80; background:#0b1534; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:10px; animation:pin .4s}
+#prizeWin img{max-width:100%; max-height:calc(100% - 70px); object-fit:contain; border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#prizeWin .big{min-height:46px; padding:10px 28px}
 @media (prefers-reduced-motion:reduce){ #logo h1,#bStorm,#bStorm > svg.ico{animation:none} .pop,#banner div{animation-duration:.01s} }
 </style>
 </head>

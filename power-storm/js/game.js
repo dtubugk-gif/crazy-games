@@ -17,7 +17,7 @@ const SAVE_KEY = 'power-storm-v1';
 function loadSave() {
   let s = null; try { s = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { }
   s = Object.assign({ powers: { fire: false, wind: false, ice: false, bolt: false }, unlocked: 1, stars: {}, best: {}, vol: { music: .8, sfx: .8, muted: false }, done: false }, s || {});
-  if (location.hash.includes('all')) { s.unlocked = 5; s.powers = { fire: true, wind: true, ice: true, bolt: true }; }
+  if (location.hash.includes('all')) { s.unlocked = 6; s.powers = { fire: true, wind: true, ice: true, bolt: true }; }
   return s;
 }
 function writeSave(s) { try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) { } }
@@ -242,12 +242,13 @@ class Game {
     this.spawnPieces(L, fromCheckpoint);
     this.hintsLeft = L.pieces.filter(p => p.t === 'hint' && (!fromCheckpoint || p.x > fromCheckpoint.x));
     $('hud').classList.remove('hidden'); $('controls').classList.remove('hidden');
-    $('lvlChip').textContent = `${L.id}. ${L.name}`;
+    if (L.prize) { this.save.prizeTries = (this.save.prizeTries || 0) + 1; writeSave(this.save); }
+    $('lvlChip').textContent = L.prize ? `${L.name} · ניסיון ${this.save.prizeTries}` : `${L.id}. ${L.name}`;
     $('bossBar').classList.toggle('hidden', !L.boss); document.body.classList.toggle('boss', !!L.boss);
     this.ui.hearts(); this.ui.powers(); this.ui.meters(); $('coinN').textContent = 0;
-    this.music(L.boss ? 'music_boss' : 'music_level');
+    this.music(L.boss || L.prize ? 'music_boss' : 'music_level');
     const amb = {}; for (const a of ['amb_town', 'amb_roof', 'amb_canal', 'amb_factory', 'amb_tower']) amb[a] = a === L.amb ? 1 : 0; this.wantAmb = amb; this.audio.setAmbience(amb);
-    if (!fromCheckpoint) this.ui.banner(L.boss ? 'קרב אחרון!' : `שלב ${L.id}`, L.boss ? 'הכו בלב שלו כשהחזה נפתח' : L.name);
+    if (!fromCheckpoint) this.ui.banner(L.boss ? 'קרב אחרון!' : L.prize ? 'שלב הפרס' : `שלב ${L.id}`, L.boss ? 'הכו בלב שלו כשהחזה נפתח' : L.prize ? 'השלב הבלתי אפשרי' : L.name);
     this.camSnap = true;
     if (L.boss) this.bossIntro();
   }
@@ -269,6 +270,8 @@ class Game {
         case 'vent': this.addVent(p); break;
         case 'check': this.addCheckpoint(p, cp && Math.abs(cp.x - p.x) < .1); break;
         case 'exit': this.addExit(p); break;
+        case 'prize': this.addPrize(p); break;
+        case 'gearrain': this.addGearRain(p); break;
       }
     }
   }
@@ -447,6 +450,54 @@ class Game {
         if (!this.done && Math.abs(g.player.x - this.x) < 1 && !g.player.dead) { this.done = true; this.anim.play('raise', { once: true, done: () => this.anim.play('wave') }); g.levelComplete(); }
         return true;
       } });
+  }
+
+  addPrize(p) {
+    const m = this.model('gear_coin', p.x, p.y, .3); const s = Assets.size('gear_coin'); m.scale.setScalar(1.6 / (Math.max(s.x, s.y) || .3));
+    const light = new THREE.PointLight(0xffd27a, 4, 9, 2); this.scene.add(light);
+    const TAUNTS = ['נו, תתפסו אותי!', 'כמעט… ממש כמעט!', 'אף אחד עוד לא תפס אותי', 'גלגל הזהב בורח!', 'אולי בניסיון הבא?', 'מהר יותר! עוד יותר!'];
+    return this.obj({ type: 'prize', x: p.x, y: p.y, model: m, light, t: 0, tauntT: 4, k: 0,
+      dispose() { window.__game.scene.remove(this.light); },
+      update(dt, g) {
+        const pl = g.player; this.t += dt; this.tauntT -= dt;
+        // impossible by design: the gear never lets the hero within its lead distance, whatever the speed
+        const lead = 6.5;
+        const was = this.x;
+        this.x = Math.max(this.x + .5 * dt, pl.x + lead);
+        if (this.x - was > .25 && Math.random() < .6) g.fx.add.emit({ x: this.x - .6, y: this.y + Math.random() - .5, z: .3, vx: -3, vy: Math.random() - .5, life: .35, size: .2, c0: [1, .92, .6], c1: [.9, .55, .15] });
+        this.y = (pl.grounded ? pl.y : Math.max(pl.y, 0)) + 1.15 + Math.sin(this.t * 2.2) * .22;
+        this.model.position.set(this.x, this.y, .3); this.model.rotation.y = this.t * 2.4; this.model.rotation.z = Math.sin(this.t) * .2;
+        this.light.position.set(this.x, this.y + .3, 1.6); this.light.intensity = 3.5 + Math.sin(this.t * 4) * 1;
+        if (Math.random() < .35) g.fx.add.emit({ x: this.x + (Math.random() - .5) * 1.4, y: this.y + (Math.random() - .5) * 1.4, z: .4, vy: .6, life: .7, size: .12, c0: [1, .95, .7], c1: [.95, .65, .2] });
+        if (!pl.dead && this.x - pl.x < lead + .6 && this.tauntT <= 0) { this.tauntT = 6 + Math.random() * 3; g.ui.hint({ t: TAUNTS[this.k++ % TAUNTS.length] }, 2.6); g.audio.play('coin', { pitch: .55, vol: .5 }); }
+        if (!pl.dead && Math.abs(pl.x - this.x) < .9 && Math.abs(pl.cy - this.y) < 1.4) g.prizeWin();
+        return true;
+      } });
+  }
+  addGearRain(p) {
+    return this.obj({ type: 'rain', x: p.x, t: 0, update(dt, g) {
+      const pl = g.player; this.t -= dt;
+      if (this.t <= 0 && !pl.dead && pl.x > this.x && pl.x < 196 && g.mode === 'play') {
+        this.t = 2.1 + Math.random() * 1.2;
+        const gr = new BossGear(g, pl.x + 3 + Math.random() * 7, pl.y + 11, -1); gr.vx = -(1 + Math.random() * 2.5); gr.vy = 0; gr.life = 5; g.shots.push(gr);
+      }
+      return true;
+    } });
+  }
+  /** the prize screen - only reachable by catching the golden gear (which the gear makes impossible) */
+  async prizeWin() {
+    if (this.prizeShown) return; this.prizeShown = true; this.mode = 'won';
+    this.save.prizeWon = true; writeSave(this.save);
+    this.audio.stinger('music_win'); this.ui.flash(.9, 900);
+    try {
+      const b = new Uint8Array(await (await fetch('models/vault.dat')).arrayBuffer());
+      const key = new TextEncoder().encode('PowerStorm-Eili-Shai-2026');
+      for (let i = 0; i < b.length; i++) b[i] ^= key[i % key.length] ^ ((i * 131) & 255);
+      const url = URL.createObjectURL(new Blob([b], { type: 'image/webp' }));
+      const d = document.createElement('div'); d.id = 'prizeWin';
+      d.innerHTML = `<img alt="זכית" src="${url}"><button class="big sec" id="pwClose">סגירה</button>`;
+      document.body.appendChild(d); $('pwClose').onclick = () => { d.remove(); this.toTitle(); };
+    } catch (e) { console.warn(e); }
   }
 
   floorBelow(x, y) {
@@ -673,7 +724,7 @@ class Game {
     const coinsOk = this.stats.coinsTotal ? this.coins >= Math.ceil(this.stats.coinsTotal * .75) : true;
     const stars = 1 + (L.boss ? (this.stats.hurt <= 3 ? 1 : 0) : (coinsOk ? 1 : 0)) + (this.stats.hurt <= (L.boss ? 1 : 2) ? 1 : 0);
     s.stars[L.id] = Math.max(s.stars[L.id] || 0, stars);
-    s.unlocked = Math.max(s.unlocked, Math.min(5, L.id + 1)); if (L.boss) s.done = true;
+    s.unlocked = Math.max(s.unlocked, Math.min(6, L.id + 1)); if (L.boss) s.done = true;
     const time = (performance.now() - this.stats.start) / 1000; s.best[L.id] = Math.min(s.best[L.id] || 1e9, time);
     writeSave(s);
     const sess = this.session, snap = { coins: this.coins, total: this.stats.coinsTotal, hurt: this.stats.hurt };
@@ -694,6 +745,7 @@ class Game {
       const pw = L.reward ? `<span class="pwb" style="background:${pcol[L.reward]}"><svg viewBox="0 0 48 48"><use href="#${icons[L.reward]}"/></svg></span>` : '';
       const row = lock ? `<svg class="lk" viewBox="0 0 24 24"><use href="#iLockD"/></svg>` : stars + pw;
       const next = !lock && !s.stars[L.id] ? ' next' : '';
+      if (L.prize) return `<button class="lv prize${lock ? ' lock' : ''}" data-id="${L.id}" ${lock ? 'disabled' : ''}><span class="n">?</span><b>${L.name}</b><span class="st">${lock ? `<svg class="lk" viewBox="0 0 24 24"><use href="#iLockD"/></svg>` : `<small class="tries">${s.prizeTries ? 'ניסיונות: ' + s.prizeTries : 'בלתי אפשרי'}</small>`}</span></button>`;
       return `<button class="lv${lock ? ' lock' : ''}${L.boss ? ' boss' : ''}${next}" data-id="${L.id}" ${lock ? 'disabled' : ''}>${L.boss ? '<span class="crown">♛</span>' : ''}<span class="n">${L.id}</span><b>${L.name}</b><span class="st">${row}</span></button>`;
     }).join('');
     this.panel(`<div class="phead"><h2>בחרו שלב</h2><button class="close" id="mClose" aria-label="סגירה">×</button></div>
@@ -762,7 +814,7 @@ class Game {
       : `<div class="stat"><span>גלגלי שיניים</span><span>${snap.coins} / ${snap.total}</span></div><div class="stat"><span>זמן</span><span>${mm}:${ss}</span></div><div class="stat"><span>פגיעות</span><span>${snap.hurt}</span></div>`;
     this.panel(`<div class="phead"><h2>${final ? 'גיבורי העיר!' : 'כל הכבוד!'}</h2></div>
       <div class="pbody"><div class="stars" id="stars">${starSvg}</div>${body}
-      <div class="btnrow">${!final && nextId <= 5 ? `<button class="big" id="rNext">לשלב הבא</button>` : ''}<button class="big sec" id="rAgain">שוב</button><button class="big sec" id="rMap">מפה</button></div></div>`, () => {
+      <div class="btnrow">${final ? `<button class="big" id="rNext">לשלב הפרס!</button>` : ''}${!final && nextId <= 5 ? `<button class="big" id="rNext">לשלב הבא</button>` : ''}<button class="big sec" id="rAgain">שוב</button><button class="big sec" id="rMap">מפה</button></div></div>`, () => {
       const svgs = [...document.querySelectorAll('#stars svg')];
       svgs.forEach((s, i) => setTimeout(() => { s.classList.add('on'); if (i < stars) this.audio.play('ui_star', { pitch: 1 + i * .12, jitter: 0 }); }, 250 + i * 330));
       $('rAgain').onclick = () => { this.audio.play('ui_click'); this.startLevel(L.id); };
@@ -870,7 +922,7 @@ class Game {
     if (L?.boss) { dist = clamp(13.8 / (tanH * asp), 15, 30); tx = .4; ty = 2.3 + Math.max(0, (p.y - 3) * .4); }
     else {
       dist = 11.8 * clamp(1.9 / asp, .9, 1.25);
-      this.lookAhead = (this.lookAhead ?? 0) + ((p.facing * 2.4 + p.vx * .25) - (this.lookAhead ?? 0)) * Math.min(1, dt * 2.2);
+      this.lookAhead = (this.lookAhead ?? 0) + ((p.facing * (L.prize ? 3.4 : 2.4) + p.vx * .25) - (this.lookAhead ?? 0)) * Math.min(1, dt * 2.2);
       tx = p.x + this.lookAhead;
       const halfW = dist * tanH * asp; tx = clamp(tx, L.len[0] + halfW - 1, L.len[1] - halfW + 1);
       // vertical: follow the ground the hero stands on, and the hero when far above/below it
