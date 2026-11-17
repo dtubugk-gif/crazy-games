@@ -1,8 +1,9 @@
+// When any js file changes, bump the ?v= number here and in index.html so phones never mix old and new files.
 // כורה נדיר - the daily Minecraft quiz dig. Flow: title -> 7 prompts (25 s each) -> results.
-import { QUESTIONS } from './questions.js';
-import { matchAnswer, TIER_POINTS } from './match.js';
-import { World, MineView, SURF, B, isSolid, kindOf, itemDataURL, layerAt, MILESTONES, rng } from './world.js';
-import { Audio } from './audio.js';
+import { QUESTIONS } from './questions.js?v=4';
+import { matchAnswer, TIER_POINTS } from './match.js?v=4';
+import { World, MineView, SURF, B, isSolid, kindOf, itemDataURL, layerAt, MILESTONES, rng } from './world.js?v=4';
+import { Audio } from './audio.js?v=4';
 
 const DEDICATION = 'יהל רוט';   // the follower's name from the channel owner; the line stays hidden while empty
 const GAME_URL = 'https://dtubugk-gif.github.io/crazy-games/rare-miner/';
