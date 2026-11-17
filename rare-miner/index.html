@@ -380,32 +380,24 @@ body.kb #panel{zoom:1; top:calc(var(--vvt) + 6px); right:calc(8px + var(--sr)); 
 #panel.boss .resTop.t0{background:linear-gradient(135deg, #5a3a34, #3e2a28); box-shadow:inset 0 0 0 2px rgba(255,140,60,.35)}
 #panel.boss .resTop.t0 .t span{color:#f0d6b6}
 
-/* ---------- the win screen (secret ending) ---------- */
-#win{position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center; padding:calc(16px + var(--st)) 16px calc(16px + var(--sb));
-  background:radial-gradient(120% 90% at 50% 35%, rgba(90,52,22,.82), rgba(26,14,6,.94)); animation:secIn .35s}
+/* ---------- the win screen (secret ending, the owner's design): navy, big gold "זכית", the email in a gold frame ---------- */
+#win{position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center; overflow:hidden;
+  padding:calc(20px + var(--st)) 16px calc(20px + var(--sb));
+  background:radial-gradient(90% 60% at 50% 42%, #10245a 0%, #0a1a44 45%, #050d27 100%); animation:secIn .4s}
 #confetti{position:absolute; inset:0; width:100%; height:100%; pointer-events:none}
-.winCard{position:relative; width:min(100%, 430px); padding:22px 20px 18px; border-radius:20px; text-align:center;
-  background:var(--grain), radial-gradient(130% 110% at 50% 30%, #fff7e2 50%, #f1dcae 85%, #e2c48c);
-  box-shadow:inset 0 0 0 2px rgba(122,82,51,.35), inset 0 0 26px rgba(150,100,45,.3), 0 0 0 4px #c9922a, 0 0 0 7px var(--wood3), 0 20px 40px rgba(0,0,0,.55);
-  animation:winIn .7s cubic-bezier(.2,1.5,.4,1)}
-@keyframes winIn{from{transform:scale(.6) translateY(30px); opacity:0}}
-.winCard:before, .winCard:after{content:''; position:absolute; top:9px; width:10px; height:10px; border-radius:50%; right:9px;
-  background:radial-gradient(circle at 35% 30%, #fff1b8, #c9922a 55%, #7a5210); box-shadow:0 1px 1px rgba(0,0,0,.35)}
-.winCard:after{right:auto; left:9px}
-.trophy{width:112px; height:112px; margin:-74px auto 4px; display:block; filter:drop-shadow(0 6px 0 rgba(46,26,13,.45)); animation:trophy 2.6s ease-in-out infinite}
-@keyframes trophy{0%,100%{transform:translateY(0) rotate(0)} 50%{transform:translateY(-6px) rotate(-3deg)}}
-.winCard .kicker{display:inline-block; padding:5px 12px 4px; border-radius:999px; font:700 13px/1 var(--display); color:var(--cream);
-  background:linear-gradient(#8a5a33, #5a361c); box-shadow:0 0 0 1.5px var(--wood3)}
-.winCard h2{margin:10px 0 6px; font:700 clamp(30px, 9vw, 40px)/1.05 var(--display); color:#ffd25e; -webkit-text-stroke:6px var(--wood2); paint-order:stroke fill;
-  text-shadow:0 4px 0 var(--wood2)}
-.winCard p{margin:0 0 14px; font:600 16px/1.4 var(--display); color:var(--ink2)}
-.winCard p b{color:var(--ink)}
-.wStats{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 16px}
-.wStats div{padding:9px 6px 8px; border-radius:14px; background:rgba(220,195,147,.5); box-shadow:inset 0 0 0 1.5px rgba(122,82,51,.25)}
-.wStats img{width:30px; height:30px; display:block; margin:0 auto 4px}
-.wStats b{display:block; font:700 22px/1 var(--display); color:var(--ink); direction:ltr}
-.wStats span{font:600 13px/1.2 var(--display); color:var(--ink2)}
-.winCard .row .btn{flex:1}
+.winIn{position:relative; width:min(100%, 640px); text-align:center; animation:winIn .8s cubic-bezier(.2,1.4,.4,1)}
+@keyframes winIn{from{transform:scale(.7); opacity:0}}
+#win h2{margin:0; font:900 clamp(96px, 34vw, 190px)/.95 'Rubik', var(--ui); letter-spacing:-2px;
+  background:linear-gradient(180deg, #fff3b0 0%, #ffd34d 30%, #e6a118 58%, #ffd970 74%, #b9770c 100%); -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 3px 0 #6e4304) drop-shadow(0 8px 14px rgba(0,0,0,.55))}
+.winLine{display:block; height:3px; width:min(78%, 460px); margin:10px auto 18px; border-radius:2px;
+  background:linear-gradient(90deg, transparent, #f7c64a 30%, #fff1b5 50%, #f7c64a 70%, transparent)}
+.winSay{margin:0; font:800 clamp(30px, 9.4vw, 54px)/1.15 'Rubik', var(--ui); color:#fff; text-shadow:0 3px 8px rgba(0,0,0,.5)}
+.winMail{display:block; margin:16px auto 18px; padding:14px 12px; border-radius:20px; text-decoration:none; color:#fff; direction:ltr; unicode-bidi:isolate;
+  font:800 clamp(21px, 6.6vw, 46px)/1.1 'Rubik', var(--ui); letter-spacing:.2px; word-break:break-all;
+  background:#08132f; border:3px solid #e9b23c; box-shadow:0 0 0 1px rgba(255,226,140,.35), inset 0 0 0 1px rgba(255,226,140,.18), 0 10px 22px rgba(0,0,0,.45)}
+.winMail:active{transform:scale(.98); background:#0d1c42}
+.winMail:focus-visible{outline:3px solid #fff1b5; outline-offset:4px}
 @media (prefers-reduced-motion:reduce){ *{animation-duration:.01s !important} }
 </style>
 </head>
@@ -503,27 +495,12 @@ body.kb #panel{zoom:1; top:calc(var(--vvt) + 6px); right:calc(8px + var(--sr)); 
 </div>
 <div id="win" class="hidden" role="dialog" aria-modal="true" aria-labelledby="winTitle">
   <canvas id="confetti" aria-hidden="true"></canvas>
-  <div class="winCard">
-    <svg class="trophy" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">
-      <path fill="#7a4a08" d="M3 2h10v1h2v4h-1v1h-2v1h-1v1H9v2h2v1h1v2H4v-2h1v-1h2V10H5V9H4V8H2V7H1V3h2z"/>
-      <path fill="#f2b632" d="M4 3h8v4h-1v1h-1v1H6V8H5V7H4z M2 4h1v2h1v1H2z M13 4h1v3h-2V6h1z M7 10h2v1H7z M5 12h6v1H5z"/>
-      <path fill="#ffe08a" d="M5 3h2v3H6v1H5z M3 4h-1v1h1z M6 12h2v1H6z"/>
-      <path fill="#fff6d0" d="M5 3h1v2H5z"/>
-      <path fill="#4fd0c6" d="M8 4h2v2H8z"/>
-      <path fill="#d8fffb" d="M8 4h1v1H8z"/>
-      <path fill="#5a361c" d="M4 13h8v1H4z"/>
-    </svg>
-    <span class="kicker">הבוס האחרון הובס</span>
-    <h2 id="winTitle">ניצחתם את המשחק!</h2>
-    <p>הבסתם את <b>גליקי</b>, הבוס האחרון של כורה נדיר.<br>רק אגדות אמיתיות מגיעות עד לכאן.</p>
-    <div class="wStats">
-      <div><img class="px" id="wIco5" alt=""><b id="wDiam">100,000</b><span>יהלומים</span></div>
-      <div><img class="px" id="wIcoB" alt=""><b>1</b><span>בוס אחרון</span></div>
-    </div>
-    <div class="row">
-      <button class="btn gold" id="bWinShare">שתפו</button>
-      <button class="btn wood" id="bWinOk">להמשיך</button>
-    </div>
+  <div class="winIn">
+    <h2 id="winTitle">זכית</h2>
+    <i class="winLine" aria-hidden="true"></i>
+    <p class="winSay">תשלח מייל לפה-</p>
+    <a class="winMail" id="winMail" href="mailto:ydglick2@gmail.com?subject=%D7%A0%D7%99%D7%A6%D7%97%D7%AA%D7%99%20%D7%91%D7%9B%D7%95%D7%A8%D7%94%20%D7%A0%D7%93%D7%99%D7%A8" dir="ltr">ydglick2@gmail.com</a>
+    <p class="winSay">ותקבל את הכסף</p>
   </div>
 </div>
 <div id="toast" class="hidden"></div>

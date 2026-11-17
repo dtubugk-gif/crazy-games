@@ -432,23 +432,19 @@ async function bossResolve(won, txt = '') {
   showWin();
 }
 let confettiOn = false;
+// once the boss is beaten the game stays on the win screen for good, every time it is opened
 function showWin() {
   phase = 'win'; $('panel').classList.remove('boss');
-  $('wDiam').textContent = (save.diamonds || 0).toLocaleString('en-US');
   $('win').classList.remove('hidden');
   audio.stinger('stinger_perfect');
   setTimeout(() => audio.play('streak', { vol: 0.9 }), 1800);
   startConfetti();
 }
-function closeWin() {
-  click(); $('win').classList.add('hidden'); confettiOn = false;
-  if (run) showResults(run, false); else goTitle();
-}
 // pixel confetti in the game's ore colours (gold, diamond, emerald): matte, no glow
 function startConfetti() {
   const cv = $('confetti'), g = cv.getContext('2d');
   const dpr = Math.min(2, window.devicePixelRatio || 1);
-  const cols = ['#f2b632', '#ffd25e', '#4fd0c6', '#d8fffb', '#5aa52e', '#fff1d2', '#e07a2e'];
+  const cols = ['#f2b632', '#ffd25e', '#e6a118', '#fff1b5', '#c98a12'];
   const few = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const ps = [];
   for (let i = 0, n = few ? 30 : 150; i < n; i++) ps.push({ x: Math.random(), y: -0.05 - Math.random() * 1.1, vy: 0.12 + Math.random() * 0.16, vx: (Math.random() - 0.5) * 0.05, s: 5 + Math.floor(Math.random() * 4), c: cols[i % cols.length], r: Math.random() * 6, vr: (Math.random() - 0.5) * 6 });
@@ -470,7 +466,6 @@ function startConfetti() {
   };
   requestAnimationFrame(tick);
 }
-function winText() { return `⛏️👑 ניצחתי את כורה נדיר!\n${(save.diamonds || 0).toLocaleString('en-US')} יהלומים, והבסתי את הבוס האחרון.\nמי עוד יגיע לשם?\n${GAME_URL}`; }
 function showResults(r, quiet) {
   run = r; phase = 'results'; show('sRes'); $('panel').classList.remove('boss');
   if (quiet) { newWorld(r.day * 7919 + 13); carveTo(yForPoints(r.total)); }
@@ -527,9 +522,8 @@ document.addEventListener('pointerdown', e => { const s = $('settings'); if (!s.
 // ---------- wiring ----------
 const legendHTML = [1, 2, 3, 4, 5].map(t => `<span><img class="px" src="${ICON[t]}" alt="">${TIER_POINTS[t]}</span>`).join('');
 $('qLegend').innerHTML = legendHTML; $('tLegend').innerHTML = legendHTML;
-$('wIco5').src = ICON[5]; $('wIcoB').src = ICON[4];
 $('tierLegend').innerHTML = [1, 2, 3, 4, 5].map(t => `<div class="tier"><img class="px" src="${ICON[t]}" alt=""><span>${TIER[t].name}</span><b>${TIER_POINTS[t]}</b></div>`).join('');
-const firstTap = () => { audio.unlock().then(updateAmbience); };
+const firstTap = () => { audio.unlock().then(() => { updateAmbience(); if (phase === 'win') audio.stinger('stinger_perfect'); }); };
 document.addEventListener('pointerdown', firstTap, { once: true, capture: true });
 document.addEventListener('keydown', firstTap, { once: true, capture: true });
 press($('bDaily'), () => { click(); if (!save.howSeen && !save.days[today()]) { save.howSeen = true; persist(); afterHow = startDaily; phase = 'how'; show('sHow'); return; } startDaily(); });
@@ -543,8 +537,6 @@ $('ans').addEventListener('input', () => { audio.play('type_key', { vol: 0.6, mi
 $('ans').addEventListener('focus', onVV); $('ans').addEventListener('blur', () => setTimeout(onVV, 50));
 press($('bNext'), next);
 press($('bShare'), () => share());
-press($('bWinShare'), () => share(winText()));
-press($('bWinOk'), closeWin);
 press($('bAgain'), () => { click(); startPractice(); });
 press($('bHome'), () => { click(); goTitle(); });
 canvas.addEventListener('pointerdown', () => { if (digging) fastForward = true; });
@@ -614,6 +606,7 @@ function frame(now) {
   bar.style.width = '100%';
   try { await document.fonts.ready; } catch (e) { }
   goTitle();
+  if (save.bossWon) showWin();
   const ld = $('loading'); ld.style.opacity = '0'; setTimeout(() => ld.remove(), 400);
   requestAnimationFrame(frame);
   // debug/test hook (used by the automated checks)
