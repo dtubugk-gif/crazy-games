@@ -201,6 +201,10 @@ h2{margin:0 0 8px; font:700 26px/1.1 var(--display); color:var(--ink)}
 #sQ.revealing .qhead{display:none}
 #sQ.revealing .qtext{font-size:clamp(17px, 4.6vh, 23px); margin-bottom:8px}
 .alts .common{margin-top:5px}
+.alts .chipList span i{display:flex; flex-direction:column; font-style:normal; line-height:1.15}
+.alts small, .resTop .t bdi, .li .a small{font:500 12px/1.2 var(--ui); color:var(--ink2)}
+.alts .common small{font-size:12.5px}
+.li .a small{display:block; overflow:hidden; text-overflow:ellipsis}
 
 /* results */
 #sRes{overflow:hidden}
@@ -293,7 +297,7 @@ body.kb #panel{zoom:1; top:calc(var(--vvt) + 6px); right:calc(8px + var(--sr)); 
   .how{gap:4px; margin-bottom:10px} .how li{font-size:14.5px} h2{font-size:23px; margin-bottom:6px}
   #resTitle{display:none}
   .big .cdIn{display:inline}
-  .list{display:grid; grid-template-columns:1fr 1fr; align-content:start; gap:4px 6px}
+  .list{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-content:start; gap:4px 6px}
   .li{padding:3px 8px 3px 4px} .li .q{display:none} .li .a{flex:1; max-width:none} .li img{width:22px; height:22px}
   #sRes .meta{display:none}
   .big{padding:5px 12px} .big .y{font-size:31px} .big .l b{font-size:17px} .big .l span{font-size:12.5px}
@@ -308,7 +312,63 @@ body.kb #panel{zoom:1; top:calc(var(--vvt) + 6px); right:calc(8px + var(--sr)); 
 #rotate b{font:700 30px/1.2 var(--display)}
 #rotate span{font:500 17px/1.45 var(--display); max-width:280px; opacity:.9}
 @keyframes turn{0%,20%{transform:rotate(0)}50%,80%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
-@media (orientation:portrait) and (pointer:coarse){ #rotate{display:flex} }
+@media (orientation:landscape) and (pointer:coarse) and (max-height:520px){ #rotate{display:flex} }
+/* ---------- upright phone (the main layout): the mine on top, the parchment card as a bottom sheet ----------
+   keep the aspect ratio in sync with UPRIGHT in js/game.js */
+@media (max-aspect-ratio:5/6){
+  :root{--F:8px}
+  #top{height:auto; flex-wrap:wrap; row-gap:8px; gap:7px 7px; left:calc((var(--F) + var(--sl)) / var(--z) + 8px)}
+  #top:after{content:''; order:8; flex-basis:100%; height:0}
+  #ores{order:9; margin-inline:auto}
+  #ores .slot{width:33px; height:33px} #ores .slot img{width:26px; height:26px}
+  #chipQ small{display:inline}
+  #panel{top:auto; left:0; right:0; margin-inline:auto; width:min(calc(100vw / var(--z) - 2 * ((var(--F) + var(--sl)) / var(--z) + 8px)), 540px);
+    bottom:calc((var(--F) + var(--sb)) / var(--z) + 8px); max-height:calc(100dvh / var(--z) - 190px)}
+  body.notop #panel{top:auto; max-height:calc(100dvh / var(--z) - 120px)}
+  .sec{flex:0 1 auto; padding:16px 18px 15px}
+  .logo{margin-top:2px}
+  .logo h1{font-size:clamp(42px, 13vw, 60px); white-space:nowrap}
+  .logo .pick{width:clamp(40px, 11vw, 54px); height:clamp(40px, 11vw, 54px)}
+  .tagline{font-size:clamp(14px, 3.9vw, 16px)}
+  .resTop{gap:10px; padding:10px 12px} .resTop img{width:52px; height:52px} .resTop .p{font-size:30px}
+  .resTop .t b{font-size:25px}
+  .qtext{font-size:clamp(23px, 6.6vw, 30px)}
+  #sQ.revealing .qtext{font-size:clamp(18px, 5vw, 23px)}
+  #askBox{flex:0 0 auto}
+  .result{flex:0 0 auto}
+  #bNext{margin-top:4px}
+  #sRes{overflow:visible}
+  .big .l span{white-space:nowrap}
+  .list{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-content:start; gap:5px 6px; flex:0 1 auto; max-height:none; overflow:visible}
+  .li{min-width:0} .li .a{min-width:0}
+  .li{padding:4px 8px 4px 5px; align-items:center}
+  .li .q{display:none}
+  .li .a{flex:1; max-width:none; display:flex; flex-direction:column; white-space:normal; line-height:1.15}
+  .li .a small{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .li .pt{min-width:34px; font-size:15px}
+  @media (max-width:400px){
+    .li{gap:6px; padding:4px 6px 4px 4px} .li img{width:22px; height:22px; padding:1px}
+    .li .a{font-size:13.5px} .li .a small{font-size:11px}
+    .li .pt{min-width:28px; font-size:13.5px}
+  }
+  #banner{left:0; right:0; width:auto; top:calc(var(--F) + var(--st) + 118px)}
+  #toast{bottom:auto; top:calc(var(--F) + var(--st) + 108px)}
+  #settings{top:calc(var(--F) + var(--st) + 56px)}
+  /* the keyboard is open: the card sits right on top of it, the mine stays visible above */
+  body.kbp #panel{zoom:1; bottom:calc(var(--kbb) + 6px); max-height:calc(var(--vvh) - 16px)}
+  body.kbp .legend, body.kbp .qhead, body.kbp #top, body.kbp #banner{display:none}
+  body.kbp .sec{padding:11px 14px 10px}
+  body.kbp .qtext{font-size:21px; margin-bottom:8px}
+  body.kbp .timer{height:20px; margin-bottom:9px}
+  body.kbp .msg{margin-top:5px; min-height:0}
+}
+@media (max-aspect-ratio:5/6) and (max-width:360px){
+  #ores .slot{width:29px; height:29px} #ores .slot img{width:23px; height:23px}
+  .chip{padding:0 9px; font-size:15px}
+  .btn{font-size:18px}
+}
+@media (max-aspect-ratio:5/6) and (min-width:600px) and (min-height:900px){ :root{--z:1.35; --F:14px} }
+@media (max-aspect-ratio:5/6) and (min-width:900px) and (min-height:1200px){ :root{--z:1.6; --F:18px} }
 @media (prefers-reduced-motion:reduce){ *{animation-duration:.01s !important} }
 </style>
 </head>
@@ -356,9 +416,9 @@ body.kb #panel{zoom:1; top:calc(var(--vvt) + 6px); right:calc(8px + var(--sr)); 
     <h2>איך משחקים?</h2>
     <ul class="how">
       <li><i>1</i><span><b>7 שאלות מיינקראפט</b> ביום, אותן שאלות לכולם.</span></li>
-      <li><i>2</i><span><b>25 שניות</b> לתשובה אחת, בעברית או באנגלית.</span></li>
+      <li><i>2</i><span><b>25 שניות</b> לתשובה אחת. אפשר לכתוב בעברית או באנגלית.</span></li>
       <li><i>3</i><span>תשובה שכולם חושבים עליה = מעט. <b>נדירה = הרבה!</b></span></li>
-      <li><i>4</i><span>כל נקודה = עמוק יותר. 700 נקודות = סלע האם.</span></li>
+      <li><i>4</i><span>כל נקודה = עמוק יותר. 700 נקודות = בדרוק.</span></li>
       <li><i>5</i><span>חפירה יומית אחת. באימון אין הגבלה.</span></li>
     </ul>
     <div class="tiers" id="tierLegend"></div>
@@ -407,7 +467,7 @@ body.kb #panel{zoom:1; top:calc(var(--vvt) + 6px); right:calc(8px + var(--sr)); 
 <div id="toast" class="hidden"></div>
 
 <div id="rotate" role="alert"><svg viewBox="0 0 96 96" fill="none"><rect x="30" y="12" width="36" height="72" rx="8" stroke="#fff4dc" stroke-width="5"/><circle cx="48" cy="73" r="3.5" fill="#fff4dc"/></svg>
-  <b>סובבו את הטלפון לרוחב</b><span>כורה נדיר משוחק כשהטלפון שוכב על הצד.</span></div>
+  <b>סובבו את הטלפון לאורך</b><span>כורה נדיר משוחק כשהטלפון עומד.</span></div>
 <div id="loading">כורה נדיר<div class="bar"><i id="loadBar"></i></div></div>
 
 <script type="module" src="js/game.js"></script>

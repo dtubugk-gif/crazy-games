@@ -15,10 +15,13 @@ const TIER = {
   4: { name: 'זהב', line: 'תשובה נדירה!', emoji: '🟨' },
   5: { name: 'יהלום', line: 'כמעט אף אחד לא חושב על זה!', emoji: '💎' },
 };
-const CAT = { mobs: 'יצורים', blocks: 'בלוקים', items: 'חפצים', food: 'אוכל', biomes: 'ביומים', structures: 'מבנים', nether: 'הנת׳ר', end: 'האנד',
-  ocean: 'אוקיינוס', redstone: 'רדסטון', enchant: 'כישופים', crafting: 'בנייה', misc: 'מיינקראפט' };
+const CAT = { mobs: 'מובים', blocks: 'בלוקים', items: 'אייטמים', food: 'אוכל', biomes: 'ביומים', structures: 'מבנים', nether: 'נת׳ר', end: 'אנד',
+  ocean: 'אושן', redstone: 'רדסטון', enchant: 'אנצ׳נטים', crafting: 'קראפטינג', misc: 'מיינקראפט' };
+// an answer's English name, shown under/next to the Hebrew one when it is not the same word
+const enOf = a => a && a.en && normalizeLite(a.en) !== normalizeLite(a.he) ? a.en : '';
 
 const $ = id => document.getElementById(id);
+const UPRIGHT = matchMedia('(max-aspect-ratio: 5/6)'); // keep in sync with the upright CSS block in index.html
 const ICON = {}; for (let t = 1; t <= 5; t++) ICON[t] = itemDataURL(t, 64);
 
 // ---------- dates (Israel time, same dig for everyone) ----------
@@ -165,7 +168,7 @@ function updateAmbience() {
 function refreshTitle() {
   const d = today(), rec = save.days[d];
   $('dailyTxt').textContent = rec?.done ? 'התוצאה שלי · חפירה #' + d : rec?.answers?.length ? `להמשיך את חפירה #${d}` : `חפירה יומית #${d}`;
-  $('dailySub').textContent = rec?.done ? `הגעתם ל־${fmtY(rec.y)} · ${rec.total} נקודות` : rec?.answers?.length ? `${rec.answers.length} מתוך 7 שאלות` : '7 שאלות חדשות מחכות';
+  $('dailySub').textContent = rec?.done ? `הגעתם ל־⁦${fmtY(rec.y)}⁩ · ${rec.total} נקודות` : rec?.answers?.length ? `${rec.answers.length} מתוך 7 שאלות` : '7 שאלות חדשות מחכות';
   const meta = [];
   if (save.streak > 1 && save.lastDone >= d - 1) meta.push(`<span>רצף: <b>${save.streak}</b> ימים</span>`);
   if (rec?.done) meta.push(`<span>החפירה הבאה בעוד <b id="cd">${hms(secsToNext())}</b></span>`);
@@ -216,7 +219,7 @@ function begin() {
 function goFull() {
   const el = document.documentElement;
   if (!document.fullscreenElement && el.requestFullscreen && matchMedia('(pointer:coarse)').matches) {
-    el.requestFullscreen({ navigationUI: 'hide' }).then(() => screen.orientation?.lock?.('landscape').catch(() => { })).catch(() => { });
+    el.requestFullscreen({ navigationUI: 'hide' }).then(() => screen.orientation?.lock?.('portrait').catch(() => { })).catch(() => { });
   }
 }
 
@@ -267,7 +270,7 @@ function timeUp() {
 async function resolve(a, txt) {
   phase = 'reveal'; digging = true; fastForward = false;
   const ans = $('ans'); ans.disabled = true; $('bDig').disabled = true; ans.blur();
-  document.body.classList.remove('kb');
+  document.body.classList.remove('kb', 'kbp');
   const q = run.qs[run.i];
   const t = a ? a.t : 0, pts = TIER_POINTS[t];
   const rec = { qid: q.id, text: txt, aid: a ? (a.en || a.he) : null, he: a ? a.he : '', t, pts };
@@ -279,7 +282,7 @@ async function resolve(a, txt) {
   $('resImg').src = t ? ICON[t] : ICON[1]; $('resImg').style.visibility = t ? 'visible' : 'hidden'; $('resImg').style.display = t ? '' : 'none';
   $('resTier').textContent = t ? `${TIER[t].name}!` : 'נגמר הזמן!';
   $('resLine').textContent = t ? TIER[t].line : (txt ? `"${txt}" לא נקלט בזמן` : 'הפעם בלי נקודות');
-  $('resAns').innerHTML = a ? `התשובה שלכם: ${esc(a.he)}${a.en && normalizeLite(a.en) !== normalizeLite(a.he) ? `<bdi dir="ltr" class="en">${esc(a.en)}</bdi>` : ''}` : '';
+  $('resAns').innerHTML = a ? `התשובה שלכם: ${esc(a.he)}${enOf(a) ? `<bdi dir="ltr" class="en">${esc(enOf(a))}</bdi>` : ''}` : '';
   $('resPts').textContent = '+' + pts;
   // dig!
   const from = shownPts, target = yForPoints(run.total);
@@ -312,10 +315,10 @@ async function resolve(a, txt) {
   const r = rng(run.i * 31 + run.total + 7);
   rare.sort(() => r() - 0.5);
   const common = q.answers.filter(x => x.t === 1 && x !== a);
-  const chip = x => `<span><img class="px" src="${ICON[x.t]}" alt="">${esc(x.he)}</span>`;
+  const chip = x => `<span><img class="px" src="${ICON[x.t]}" alt=""><i>${esc(x.he)}${enOf(x) ? `<small dir="ltr">${esc(enOf(x))}</small>` : ''}</i></span>`;
   let html = '';
   if (rare.length) html += `<b>תשובות נדירות שהיו אפשריות:</b><div class="chipList">${rare.slice(0, 3).map(chip).join('')}</div>`;
-  if (common.length && t !== 1) html += `<div class="common">הכי צפוי: <b>${common.map(x => esc(x.he)).join(', ')}</b></div>`;
+  if (common.length && t !== 1) html += `<div class="common">הכי צפוי: <b>${common.map(x => esc(x.he) + (enOf(x) ? ` <small dir="ltr">(${esc(enOf(x))})</small>` : '')).join(', ')}</b></div>`;
   $('alts').innerHTML = html; $('alts').classList.toggle('hidden', !html);
   const last = run.i === PER_DAY - 1;
   $('bNext').textContent = last ? 'לתוצאה הסופית' : 'לשאלה הבאה';
@@ -370,12 +373,15 @@ function showResults(r, quiet) {
   const y = yForPoints(r.total), perfect = r.total >= MAXPTS;
   $('resTitle').textContent = r.mode === 'daily' ? `חפירה יומית #${r.day}` : 'סיבוב אימון';
   $('resY').textContent = fmtY(y);
-  $('resLayer').textContent = perfect ? 'סלע האם! חפירה מושלמת!' : layerAt(y).name;
+  $('resLayer').textContent = perfect ? 'בדרוק! חפירה מושלמת!' : layerAt(y).name;
   $('resTotal').innerHTML = `${r.total} נקודות מתוך ${MAXPTS}` + (r.mode === 'daily' ? `<em class="cdIn"> · הבאה: <b id="cd3">${hms(secsToNext())}</b></em>` : '');
   $('yTxt').textContent = fmtY(y); $('qNum').textContent = `${PER_DAY}/${PER_DAY}`; $('modeTxt').textContent = r.mode === 'daily' ? 'חפירה #' + r.day : 'אימון';
   $('resList').innerHTML = r.qs.map((q, i) => {
     const a = r.answers[i] || { t: 0, pts: 0 };
-    return `<div class="li ${a.t ? '' : 'miss'}">${a.t ? `<img class="px" src="${ICON[a.t]}" alt="">` : '<img alt="" style="visibility:hidden">'}<span class="q">${esc(q.q)}</span><span class="a">${a.t ? esc(a.he) : 'אין'}</span><span class="pt">+${a.pts}</span></div>`;
+    // look the answer up again so saved digs show today's names
+    const ans = a.t ? (q.answers.find(x => x.en === a.aid) || { he: a.he, en: a.aid }) : null;
+    const name = ans ? `${esc(ans.he)}${enOf(ans) ? `<small dir="ltr">${esc(enOf(ans))}</small>` : ''}` : 'אין';
+    return `<div class="li ${a.t ? '' : 'miss'}">${a.t ? `<img class="px" src="${ICON[a.t]}" alt="">` : '<img alt="" style="visibility:hidden">'}<span class="q">${esc(q.q)}</span><span class="a">${name}</span><span class="pt">+${a.pts}</span></div>`;
   }).join('');
   $('bAgain').textContent = r.mode === 'daily' ? 'אימון' : 'עוד סיבוב';
   const meta = [];
@@ -394,7 +400,7 @@ function shareText() {
   const r = run, y = yForPoints(r.total);
   const row = r.qs.map((_, i) => TIER[(r.answers[i] || {}).t || 0].emoji).join('');
   const head = r.mode === 'daily' ? `⛏️ כורה נדיר · חפירה #${r.day}` : '⛏️ כורה נדיר · אימון';
-  return `${head}\n${row}\nהגעתי ל־${fmtY(y)} (${layerAt(y).name}) · ${r.total} נקודות\n${GAME_URL}`;
+  return `${head}\n${row}\nהגעתי ל־⁦${fmtY(y)}⁩ (${layerAt(y).name}) · ${r.total} נקודות\n${GAME_URL}`;
 }
 async function share() {
   click();
@@ -445,7 +451,10 @@ function onVV() {
   const root = document.documentElement.style;
   root.setProperty('--vvh', vv.height + 'px'); root.setProperty('--vvt', vv.offsetTop + 'px');
   const typing = document.activeElement === $('ans') && phase === 'ask';
-  document.body.classList.toggle('kb', typing && vv.height < 250);
+  // upright: the card rides on top of the keyboard (the layout viewport keeps its height)
+  root.setProperty('--kbb', Math.max(0, window.innerHeight - vv.height - vv.offsetTop) + 'px');
+  document.body.classList.toggle('kbp', UPRIGHT.matches && typing && vv.height < window.innerHeight * 0.8);
+  document.body.classList.toggle('kb', !UPRIGHT.matches && typing && vv.height < 250);
 }
 window.visualViewport?.addEventListener('resize', onVV); window.visualViewport?.addEventListener('scroll', onVV);
 
@@ -458,13 +467,24 @@ function frame(now) {
   if (fastForward && digging) dt *= 2;
   view.resize();
   view.uiScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--z')) || 1;
-  // keep the shaft in the open part of the screen, left of the card
-  const pr = $('panel').getBoundingClientRect(), W = canvas.clientWidth;
+  // keep the shaft in the open part of the screen: left of the card when sideways, above it when upright
+  const pr = $('panel').getBoundingClientRect(), W = canvas.clientWidth, H = canvas.clientHeight;
   const fr = $('frameIn').getBoundingClientRect(); view.safeLeft = fr.left || 0;
-  const free = document.body.classList.contains('kb') ? W : Math.max(120, pr.left - fr.left);
-  view.focusX = Math.max(0.16, Math.min(0.5, (fr.left + free * 0.6) / W));
-  view.gaugeTop = document.body.classList.contains('notop') ? (fr.top || 0) + 12 : $('top').getBoundingClientRect().bottom + 8;
-  view.gaugeBottom = (fr.bottom || canvas.clientHeight) - 12;
+  const topB = document.body.classList.contains('notop') ? (fr.top || 0) + 12 : $('top').getBoundingClientRect().bottom + 8;
+  let fx, fy;
+  if (UPRIGHT.matches) {
+    const bottom = Math.max(topB + 80, pr.top - 10);
+    fx = 0.6; fy = Math.max(0.08, Math.min(0.62, (topB + (bottom - topB) * 0.62 + 10) / H)); // feet a bit below the middle, so the head shows
+    view.gaugeBottom = bottom;
+  } else {
+    const free = document.body.classList.contains('kb') ? W : Math.max(120, pr.left - fr.left);
+    fx = Math.max(0.16, Math.min(0.5, (fr.left + free * 0.6) / W)); fy = 0.42;
+    view.gaugeBottom = (fr.bottom || H) - 12;
+  }
+  // ease towards the new framing so the shaft glides when the card grows or shrinks
+  const kf = view.framed ? 1 - Math.pow(0.002, dt) : 1; view.framed = true;
+  view.focusX += (fx - view.focusX) * kf; view.focusY += (fy - view.focusY) * kf;
+  view.gaugeTop = topB;
   view.update(dt); view.draw();
   if (phase === 'ask') {
     const left = Math.max(0, QTIME - (now - qStart) / 1000);

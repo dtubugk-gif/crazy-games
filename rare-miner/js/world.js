@@ -252,19 +252,19 @@ export const MILESTONES = [
   { y: 56, t: 'פחם נפוץ בכל מקום כאן למעלה' },
   { y: 48, t: 'נחושת הכי נפוצה בגובה 48' },
   { y: 16, t: 'ברזל: אחד השיאים שלו בגובה 16' },
-  { y: 0, t: 'מתחת לגובה 0: רק אבן עמוקה (Deepslate)' },
+  { y: 0, t: 'מתחת לגובה 0: רק דיפסלייט' },
   { y: -16, t: 'זהב הכי נפוץ בגובה ‎-16' },
-  { y: -51, t: 'בגובה הזה נבנות הערים העתיקות' },
+  { y: -51, t: 'בגובה הזה נבנות האנשנט סיטיז' },
   { y: -54, t: 'מתחת לגובה ‎-54 המערות מלאות לבה' },
-  { y: -59, t: 'יהלומים הכי נפוצים ממש מעל סלע האם. מכאן אי אפשר לחפור: חפירה מושלמת!' },
+  { y: -59, t: 'יהלומים הכי נפוצים ממש מעל הבדרוק. מכאן אי אפשר לחפור: חפירה מושלמת!' },
 ];
 export const LAYERS = [
   { min: 61, name: 'פני השטח', amb: 'amb_surface' },
   { min: 1, name: 'שכבת האבן', amb: 'amb_cave' },
-  { min: -30, name: 'האבן העמוקה', amb: 'amb_deep' },
-  { min: -54, name: 'האזור האפל', amb: 'amb_deep' },
+  { min: -30, name: 'שכבת הדיפסלייט', amb: 'amb_deep' },
+  { min: -54, name: 'הדיפ דארק', amb: 'amb_deep' },
   { min: -59, name: 'שכבת הלבה', amb: 'amb_lava' },
-  { min: -999, name: 'סלע האם', amb: 'amb_lava' },
+  { min: -999, name: 'בדרוק', amb: 'amb_lava' },
 ];
 export const layerAt = y => LAYERS.find(l => y >= l.min);
 
@@ -493,8 +493,9 @@ export class MineView {
     const w = Math.round(this.cv.clientWidth * dpr), h = Math.round(this.cv.clientHeight * dpr);
     if (this.cv.width !== w || this.cv.height !== h) { this.cv.width = w; this.cv.height = h; }
     this.dpr = dpr;
-    // integer texel size so the pixel art stays crisp: about 11 blocks visible vertically on a phone
-    this.tx = Math.max(2, Math.round(h / (T * 9.5)));
+    // integer texel size so the pixel art stays crisp: about 9.5 blocks top to bottom on a sideways phone,
+    // and at least 8 blocks across on an upright one (where the card covers the lower half)
+    this.tx = Math.max(2, Math.round(Math.min(h / (T * 9.5), w / (T * (w > 600 * dpr ? 11 : 8)))));
     this.bs = this.tx * T;
     this.light.width = Math.ceil(w / 4); this.light.height = Math.ceil(h / 4);
   }
@@ -666,6 +667,7 @@ export class MineView {
       const yLine = this.sy(ms.y + 1), xl = Math.max(xlMin, xr - tw), top = Math.max(yLine - 10 * d, prevBottom + 5 * d);
       prevBottom = top + hh;
       if (top < ((this.gaugeTop || 0) - 4) * this.dpr) continue; // keep clear of the status row
+      if (this.gaugeBottom && top + 26 * d > this.gaugeBottom * this.dpr) continue; // would only peek out above the card
       // a thin marker line at the exact height, running into the shaft
       g.fillStyle = 'rgba(255,244,220,.75)';
       for (let x = xr; x < this.sx(1); x += 8 * d) g.fillRect(x, yLine - d, 4 * d, 2 * d);
