@@ -4,7 +4,7 @@ import { matchAnswer, TIER_POINTS } from './match.js';
 import { World, MineView, SURF, B, isSolid, kindOf, itemDataURL, layerAt, MILESTONES, rng } from './world.js';
 import { Audio } from './audio.js';
 
-const DEDICATION = '';   // the follower's name from the channel owner; the line stays hidden while empty
+const DEDICATION = 'יהל רוט';   // the follower's name from the channel owner; the line stays hidden while empty
 const GAME_URL = 'https://dtubugk-gif.github.io/crazy-games/rare-miner/';
 const QTIME = 25, PER_DAY = 7, MAXPTS = 700, DAY1 = Date.UTC(2026, 10, 17), BEDROCK_STAND = -60;
 const TIER = {
