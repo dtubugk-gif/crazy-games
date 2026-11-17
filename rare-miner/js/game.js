@@ -6,6 +6,10 @@ import { Audio } from './audio.js';
 
 const DEDICATION = 'יהל רוט';   // the follower's name from the channel owner; the line stays hidden while empty
 const GAME_URL = 'https://dtubugk-gif.github.io/crazy-games/rare-miner/';
+// the secret ending: after BOSS_AT diamond answers (all digs together), a round ends with one last question,
+// "who is the final boss?", and only the boss's name opens the win screen
+const BOSS_AT = 100000;
+const BOSS_Q = { id: 'final-boss', q: 'מה הבוס האחרון במשחק?', answers: [{ he: 'גליקי', en: 'Glicky', t: 5, alias: ['גליקי', 'גליקיי', 'גלייקי', 'glicky', 'gliky', 'gliki', 'glicki', 'glickey', 'glikey', 'gleaky', 'gleeky'] }] };
 const QTIME = 25, PER_DAY = 7, MAXPTS = 700, DAY1 = Date.UTC(2026, 10, 17), BEDROCK_STAND = -60;
 const TIER = {
   0: { name: 'אין תשובה', emoji: '✖️' },
@@ -46,7 +50,7 @@ const fmtY = y => 'Y ' + y;
 
 // ---------- save ----------
 const SAVE_KEY = 'rareMiner.v1';
-let save = { days: {}, streak: 0, lastDone: 0, bestPractice: null, vol: { music: 0.8, sfx: 0.8, muted: false }, howSeen: false };
+let save = { days: {}, streak: 0, lastDone: 0, bestPractice: null, diamonds: 0, bossWon: false, vol: { music: 0.8, sfx: 0.8, muted: false }, howSeen: false };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.days) save = Object.assign(save, s); } catch (e) { }
 const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { } };
 
@@ -173,6 +177,7 @@ function refreshTitle() {
   if (save.streak > 1 && save.lastDone >= d - 1) meta.push(`<span>רצף: <b>${save.streak}</b> ימים</span>`);
   if (rec?.done) meta.push(`<span>החפירה הבאה בעוד <b id="cd">${hms(secsToNext())}</b></span>`);
   else meta.push(`<span>חפירה חדשה כל יום ב־00:00</span>`);
+  if (save.bossWon) meta.unshift('<span>👑 <b>ניצחתם את המשחק</b></span>');
   $('titleMeta').innerHTML = meta.join('');
   if (DEDICATION) { $('ded').textContent = 'המשחק מוקדש ל' + DEDICATION + ' ❤️'; $('ded').classList.remove('hidden'); }
 }
@@ -244,6 +249,7 @@ function ask(focus) {
 }
 
 function submit() {
+  if (phase === 'boss') { bossSubmit(); return; }
   if (phase !== 'ask') return;
   const ans = $('ans'), txt = ans.value.trim();
   const row = $('ansForm');
@@ -262,6 +268,7 @@ function submit() {
 }
 
 function timeUp() {
+  if (phase === 'boss') { audio.play('time_up', { vol: 1, duck: 0.6 }); bossResolve(false); return; }
   if (phase !== 'ask') return;
   audio.play('time_up', { vol: 1, duck: 0.6 });
   resolve(null, $('ans').value.trim());
@@ -275,6 +282,7 @@ async function resolve(a, txt) {
   const t = a ? a.t : 0, pts = TIER_POINTS[t];
   const rec = { qid: q.id, text: txt, aid: a ? (a.en || a.he) : null, he: a ? a.he : '', t, pts };
   run.answers.push(rec); run.total += pts;
+  if (t === 5) { save.diamonds = (save.diamonds || 0) + 1; persist(); }
   if (run.mode === 'daily') { const r = save.days[run.day]; r.cur = -1; r.total = run.total; persist(); }
   // the result card
   $('askBox').classList.add('hidden'); $('result').classList.remove('hidden'); $('sQ').classList.add('revealing');
@@ -348,6 +356,7 @@ function flyToSlot(t, i) {
 }
 
 function next() {
+  if (phase === 'bossLost') { click(); showResults(run, false); return; }
   if (phase !== 'reveal' || digging) return;
   click();
   run.i++;
@@ -364,10 +373,106 @@ function finish() {
       persist();
     }
   } else if (save.bestPractice === null || run.total > save.bestPractice) { save.bestPractice = run.total; persist(); }
+  if ((save.diamonds || 0) >= BOSS_AT && !save.bossWon) { askBoss(); return; }
   showResults(run, false);
 }
+// ---------- the final boss (secret ending) ----------
+function askBoss() {
+  phase = 'boss'; show('sQ'); $('panel').classList.add('boss');
+  slots(run.answers, -1);
+  $('qNum').textContent = 'בוס';
+  $('qCount').textContent = 'השאלה האחרונה';
+  $('qCat').textContent = 'הבוס האחרון';
+  $('qText').textContent = BOSS_Q.q;
+  $('askBox').classList.remove('hidden'); $('result').classList.add('hidden'); $('sQ').classList.remove('revealing');
+  $('alts').classList.add('hidden'); $('bNext').classList.add('hidden');
+  $('msg').textContent = 'יש רק ניסיון אחד!'; $('msg').className = 'msg';
+  const ans = $('ans'); ans.value = ''; ans.disabled = false; $('bDig').disabled = false; $('ansForm').classList.remove('bad');
+  $('timer').className = 'timer'; $('tFill').style.transform = 'scaleX(1)'; $('tNum').textContent = QTIME;
+  qStart = performance.now(); lastTick = 99;
+  banner('שאלת הבוס!');
+  audio.play('dig_bedrock', { vol: 1 }); setTimeout(() => audio.play('lava_hiss', { vol: 0.7 }), 300);
+  view.shake = 0.8;
+  updateAmbience();
+  ans.focus({ preventScroll: true });
+}
+// the answer is the boss's name, once or several times ("גליקי גליקי גליקי"), in Hebrew or English
+function isBossName(txt) {
+  const parts = String(txt).split(/[\s.,!?;:'"()\-־]+/).filter(Boolean);
+  return parts.length > 0 && parts.every(w => matchAnswer(BOSS_Q, w));
+}
+function bossSubmit() {
+  const ans = $('ans'), txt = ans.value.trim();
+  if (!txt) { const row = $('ansForm'); row.classList.remove('bad'); void row.offsetWidth; row.classList.add('bad'); ans.focus(); return; }
+  audio.play('submit', { vol: 0.9 });
+  bossResolve(isBossName(txt), txt);
+}
+async function bossResolve(won, txt = '') {
+  phase = 'bossDone';
+  const ans = $('ans'); ans.disabled = true; $('bDig').disabled = true; ans.blur();
+  document.body.classList.remove('kb', 'kbp');
+  $('askBox').classList.add('hidden'); $('result').classList.remove('hidden'); $('sQ').classList.add('revealing');
+  $('resImg').src = ICON[5]; $('resImg').style.visibility = won ? 'visible' : 'hidden'; $('resImg').style.display = won ? '' : 'none';
+  $('resTop').className = 'resTop ' + (won ? 't5' : 't0');
+  $('resTier').textContent = won ? 'הבוס הובס!' : 'הבוס ניצח!';
+  $('resLine').textContent = won ? 'נכון! גליקי הוא הבוס האחרון' : 'זה לא הבוס האחרון. נסו שוב בסוף הסיבוב הבא';
+  $('resAns').textContent = txt ? 'התשובה שלכם: ' + txt : '';
+  $('resPts').textContent = won ? '' : '+0';
+  if (!won) {
+    audio.play('wrong', { vol: 0.9 });
+    $('bNext').textContent = 'לתוצאה הסופית'; $('bNext').classList.remove('hidden');
+    phase = 'bossLost';
+    return;
+  }
+  save.bossWon = true; save.bossWonOn = today(); persist();
+  view.miner.celebrate = 4; view.shake = 1; freeze(160);
+  audio.play('ore_5', { vol: 1, duck: 0.6 });
+  for (let k = 0; k < 4; k++) setTimeout(() => { view.sparkle(0.5, standY() + 1.8 + k * 0.4, k % 2 ? 4 : 5); audio.play('coin', { vol: 0.6 }); }, 250 + k * 260);
+  await wait(1500);
+  showWin();
+}
+let confettiOn = false;
+function showWin() {
+  phase = 'win'; $('panel').classList.remove('boss');
+  $('wDiam').textContent = (save.diamonds || 0).toLocaleString('en-US');
+  $('win').classList.remove('hidden');
+  audio.stinger('stinger_perfect');
+  setTimeout(() => audio.play('streak', { vol: 0.9 }), 1800);
+  startConfetti();
+}
+function closeWin() {
+  click(); $('win').classList.add('hidden'); confettiOn = false;
+  if (run) showResults(run, false); else goTitle();
+}
+// pixel confetti in the game's ore colours (gold, diamond, emerald): matte, no glow
+function startConfetti() {
+  const cv = $('confetti'), g = cv.getContext('2d');
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const cols = ['#f2b632', '#ffd25e', '#4fd0c6', '#d8fffb', '#5aa52e', '#fff1d2', '#e07a2e'];
+  const few = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ps = [];
+  for (let i = 0, n = few ? 30 : 150; i < n; i++) ps.push({ x: Math.random(), y: -0.05 - Math.random() * 1.1, vy: 0.12 + Math.random() * 0.16, vx: (Math.random() - 0.5) * 0.05, s: 5 + Math.floor(Math.random() * 4), c: cols[i % cols.length], r: Math.random() * 6, vr: (Math.random() - 0.5) * 6 });
+  let last = performance.now();
+  confettiOn = true;
+  const tick = now => {
+    if (!confettiOn) { g.clearRect(0, 0, cv.width, cv.height); return; }
+    requestAnimationFrame(tick);
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const W = cv.clientWidth, H = cv.clientHeight;
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+    for (const p of ps) {
+      p.y += p.vy * dt; p.x += p.vx * dt + Math.sin(now / 500 + p.r) * 0.0006; p.r += p.vr * dt;
+      if (p.y > 1.05 && !few) { p.y = -0.05; p.x = Math.random(); }
+      const w = Math.max(1, Math.round(p.s * Math.abs(Math.cos(p.r))));
+      g.fillStyle = p.c; g.fillRect(Math.round(p.x * W - w / 2), Math.round(p.y * H), w, p.s);
+    }
+  };
+  requestAnimationFrame(tick);
+}
+function winText() { return `⛏️👑 ניצחתי את כורה נדיר!\n${(save.diamonds || 0).toLocaleString('en-US')} יהלומים, והבסתי את הבוס האחרון.\nמי עוד יגיע לשם?\n${GAME_URL}`; }
 function showResults(r, quiet) {
-  run = r; phase = 'results'; show('sRes');
+  run = r; phase = 'results'; show('sRes'); $('panel').classList.remove('boss');
   if (quiet) { newWorld(r.day * 7919 + 13); carveTo(yForPoints(r.total)); }
   slots(r.answers, -1); setPts(r.total);
   const y = yForPoints(r.total), perfect = r.total >= MAXPTS;
@@ -402,9 +507,9 @@ function shareText() {
   const head = r.mode === 'daily' ? `⛏️ כורה נדיר · חפירה #${r.day}` : '⛏️ כורה נדיר · אימון';
   return `${head}\n${row}\nהגעתי ל־⁦${fmtY(y)}⁩ (${layerAt(y).name}) · ${r.total} נקודות\n${GAME_URL}`;
 }
-async function share() {
+async function share(text) {
   click();
-  const text = shareText();
+  if (typeof text !== 'string') text = shareText();
   if (navigator.share && matchMedia('(pointer:coarse)').matches) { try { await navigator.share({ text }); return; } catch (e) { if (e.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(text); audio.play('copy', { vol: 0.8 }); toast('הועתק! הדביקו בוואטסאפ'); }
   catch (e) { prompt('העתיקו את התוצאה:', text); }
@@ -422,6 +527,7 @@ document.addEventListener('pointerdown', e => { const s = $('settings'); if (!s.
 // ---------- wiring ----------
 const legendHTML = [1, 2, 3, 4, 5].map(t => `<span><img class="px" src="${ICON[t]}" alt="">${TIER_POINTS[t]}</span>`).join('');
 $('qLegend').innerHTML = legendHTML; $('tLegend').innerHTML = legendHTML;
+$('wIco5').src = ICON[5]; $('wIcoB').src = ICON[4];
 $('tierLegend').innerHTML = [1, 2, 3, 4, 5].map(t => `<div class="tier"><img class="px" src="${ICON[t]}" alt=""><span>${TIER[t].name}</span><b>${TIER_POINTS[t]}</b></div>`).join('');
 const firstTap = () => { audio.unlock().then(updateAmbience); };
 document.addEventListener('pointerdown', firstTap, { once: true, capture: true });
@@ -436,12 +542,14 @@ $('bDig').addEventListener('pointerdown', e => e.preventDefault()); // keep the 
 $('ans').addEventListener('input', () => { audio.play('type_key', { vol: 0.6, minGap: 0.035, jitter: 0.1 }); if ($('msg').textContent) $('msg').textContent = ''; });
 $('ans').addEventListener('focus', onVV); $('ans').addEventListener('blur', () => setTimeout(onVV, 50));
 press($('bNext'), next);
-press($('bShare'), share);
+press($('bShare'), () => share());
+press($('bWinShare'), () => share(winText()));
+press($('bWinOk'), closeWin);
 press($('bAgain'), () => { click(); startPractice(); });
 press($('bHome'), () => { click(); goTitle(); });
 canvas.addEventListener('pointerdown', () => { if (digging) fastForward = true; });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && phase === 'reveal' && !digging && document.activeElement !== $('ans')) { e.preventDefault(); next(); }
+  if (e.key === 'Enter' && (phase === 'reveal' || phase === 'bossLost') && !digging && document.activeElement !== $('ans')) { e.preventDefault(); next(); }
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden) audio.suspend(); else audio.resume(); });
 
@@ -450,7 +558,7 @@ function onVV() {
   const vv = window.visualViewport; if (!vv) return;
   const root = document.documentElement.style;
   root.setProperty('--vvh', vv.height + 'px'); root.setProperty('--vvt', vv.offsetTop + 'px');
-  const typing = document.activeElement === $('ans') && phase === 'ask';
+  const typing = document.activeElement === $('ans') && (phase === 'ask' || phase === 'boss');
   // upright: the card rides on top of the keyboard (the layout viewport keeps its height)
   root.setProperty('--kbb', Math.max(0, window.innerHeight - vv.height - vv.offsetTop) + 'px');
   document.body.classList.toggle('kbp', UPRIGHT.matches && typing && vv.height < window.innerHeight * 0.8);
@@ -486,7 +594,7 @@ function frame(now) {
   view.focusX += (fx - view.focusX) * kf; view.focusY += (fy - view.focusY) * kf;
   view.gaugeTop = topB;
   view.update(dt); view.draw();
-  if (phase === 'ask') {
+  if (phase === 'ask' || phase === 'boss') {
     const left = Math.max(0, QTIME - (now - qStart) / 1000);
     $('tFill').style.transform = `scaleX(${left / QTIME})`;
     const s = Math.ceil(left); $('tNum').textContent = s;
@@ -509,5 +617,5 @@ function frame(now) {
   const ld = $('loading'); ld.style.opacity = '0'; setTimeout(() => ld.remove(), 400);
   requestAnimationFrame(frame);
   // debug/test hook (used by the automated checks)
-  window.__rm = { view, audio, get run() { return run; }, get phase() { return phase; }, dayQuestions, yForPoints, today };
+  window.__rm = { view, audio, get save() { return save; }, persist, showWin, isBossName, get run() { return run; }, get phase() { return phase; }, dayQuestions, yForPoints, today };
 })();
