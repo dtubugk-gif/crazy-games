@@ -1,0 +1,257 @@
+{
+  "sfx": {
+    "break_deep": {
+      "files": [
+        "break_deep_1.ogg",
+        "break_deep_2.ogg",
+        "break_deep_3.ogg"
+      ],
+      "gain": 0.32
+    },
+    "break_dirt": {
+      "files": [
+        "break_dirt_1.ogg",
+        "break_dirt_2.ogg",
+        "break_dirt_3.ogg"
+      ],
+      "gain": 0.35
+    },
+    "break_stone": {
+      "files": [
+        "break_stone_1.ogg",
+        "break_stone_2.ogg",
+        "break_stone_3.ogg"
+      ],
+      "gain": 0.33
+    },
+    "coin": {
+      "files": [
+        "coin_1.ogg",
+        "coin_2.ogg"
+      ],
+      "gain": 0.55
+    },
+    "copy": {
+      "files": [
+        "copy_1.ogg"
+      ],
+      "gain": 0.53
+    },
+    "dig_bedrock": {
+      "files": [
+        "dig_bedrock_1.ogg"
+      ],
+      "gain": 0.41
+    },
+    "dig_deep": {
+      "files": [
+        "dig_deep_1.ogg",
+        "dig_deep_2.ogg",
+        "dig_deep_3.ogg",
+        "dig_deep_4.ogg"
+      ],
+      "gain": 0.29
+    },
+    "dig_dirt": {
+      "files": [
+        "dig_dirt_1.ogg",
+        "dig_dirt_2.ogg",
+        "dig_dirt_3.ogg",
+        "dig_dirt_4.ogg"
+      ],
+      "gain": 0.35
+    },
+    "dig_stone": {
+      "files": [
+        "dig_stone_1.ogg",
+        "dig_stone_2.ogg",
+        "dig_stone_3.ogg",
+        "dig_stone_4.ogg"
+      ],
+      "gain": 0.31
+    },
+    "land": {
+      "files": [
+        "land_1.ogg",
+        "land_2.ogg"
+      ],
+      "gain": 0.4
+    },
+    "lava_hiss": {
+      "files": [
+        "lava_hiss_1.ogg"
+      ],
+      "gain": 0.38
+    },
+    "layer": {
+      "files": [
+        "layer_1.ogg"
+      ],
+      "gain": 0.44
+    },
+    "ore_1": {
+      "files": [
+        "ore_1_1.ogg"
+      ],
+      "gain": 0.38
+    },
+    "ore_2": {
+      "files": [
+        "ore_2_1.ogg"
+      ],
+      "gain": 0.38
+    },
+    "ore_3": {
+      "files": [
+        "ore_3_1.ogg"
+      ],
+      "gain": 0.37
+    },
+    "ore_4": {
+      "files": [
+        "ore_4_1.ogg"
+      ],
+      "gain": 0.34
+    },
+    "ore_5": {
+      "files": [
+        "ore_5_1.ogg"
+      ],
+      "gain": 0.39
+    },
+    "splash": {
+      "files": [
+        "splash_1.ogg"
+      ],
+      "gain": 0.32
+    },
+    "streak": {
+      "files": [
+        "streak_1.ogg"
+      ],
+      "gain": 0.44
+    },
+    "submit": {
+      "files": [
+        "submit_1.ogg"
+      ],
+      "gain": 0.57
+    },
+    "tick": {
+      "files": [
+        "tick_1.ogg",
+        "tick_2.ogg"
+      ],
+      "gain": 0.48
+    },
+    "tick_hi": {
+      "files": [
+        "tick_hi_1.ogg",
+        "tick_hi_2.ogg"
+      ],
+      "gain": 0.55
+    },
+    "time_up": {
+      "files": [
+        "time_up_1.ogg"
+      ],
+      "gain": 0.56
+    },
+    "type_key": {
+      "files": [
+        "type_key_1.ogg",
+        "type_key_2.ogg",
+        "type_key_3.ogg",
+        "type_key_4.ogg"
+      ],
+      "gain": 0.45
+    },
+    "ui_back": {
+      "files": [
+        "ui_back_1.ogg"
+      ],
+      "gain": 0.61
+    },
+    "ui_click": {
+      "files": [
+        "ui_click_1.ogg",
+        "ui_click_2.ogg"
+      ],
+      "gain": 0.57
+    },
+    "ui_open": {
+      "files": [
+        "ui_open_1.ogg"
+      ],
+      "gain": 0.64
+    },
+    "wrong": {
+      "files": [
+        "wrong_1.ogg"
+      ],
+      "gain": 0.61
+    }
+  },
+  "loops": {
+    "amb_cave": {
+      "file": "amb_cave.ogg",
+      "gain": 0.53,
+      "loop": true
+    },
+    "amb_deep": {
+      "file": "amb_deep.ogg",
+      "gain": 0.6,
+      "loop": true
+    },
+    "amb_lava": {
+      "file": "amb_lava.ogg",
+      "gain": 0.38,
+      "loop": true
+    },
+    "amb_surface": {
+      "file": "amb_surface.ogg",
+      "gain": 0.34,
+      "loop": true
+    }
+  },
+  "music": {
+    "music_deep": {
+      "file": "music_deep.ogg",
+      "gain": 0.6,
+      "loop": true,
+      "bpm": 96,
+      "key": "D dorian",
+      "bars": 24
+    },
+    "music_dig": {
+      "file": "music_dig.ogg",
+      "gain": 0.6,
+      "loop": true,
+      "bpm": 96,
+      "key": "D dorian",
+      "bars": 24
+    },
+    "music_title": {
+      "file": "music_title.ogg",
+      "gain": 0.6,
+      "loop": true,
+      "bpm": 96,
+      "key": "D dorian",
+      "bars": 20
+    },
+    "stinger_perfect": {
+      "file": "stinger_perfect.ogg",
+      "gain": 0.55,
+      "loop": false,
+      "bpm": 96,
+      "key": "D major"
+    },
+    "stinger_results": {
+      "file": "stinger_results.ogg",
+      "gain": 0.6,
+      "loop": false,
+      "bpm": 96,
+      "key": "D major"
+    }
+  }
+}
