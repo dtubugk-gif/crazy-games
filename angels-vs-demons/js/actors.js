@@ -1,10 +1,10 @@
 // Actors: the player (angel or demon hero), the 6 enemy roles of each side with their own AI, projectiles, heal orbs.
 // Everything lives on the 2D plane z = 0; models turn ~60° toward the way they face so wings and weapons read.
 import * as THREE from 'three';
-import { Assets, Anim, node, ownMaterials } from './assets.js?v=3';
-import { HEIGHT, ROLE_STATS } from './roster.js?v=3';
-import { ARENA } from './world.js?v=3';
-import { C } from './fx.js?v=3';
+import { Assets, Anim, node, ownMaterials } from './assets.js?v=4';
+import { HEIGHT, ROLE_STATS } from './roster.js?v=4';
+import { ARENA } from './world.js?v=4';
+import { C } from './fx.js?v=4';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -106,8 +106,8 @@ class Actor {
 
 // ================================================================ the player
 export class Player extends Actor {
-  constructor(g, sideDef) {
-    super(g, sideDef.hero, sideDef.key, DISPLAY.player);
+  constructor(g, sideDef, model = sideDef.hero, display = DISPLAY.player) {
+    super(g, model, sideDef.key, display);
     this.isPlayer = true; this.def = sideDef;
     this.maxHp = 100; this.hp = 100; this.r = .62 * SC;
     this.combo = 0; this.comboT = 0; this.queued = false; this.shotCd = 0; this.dashCd = 0; this.dashT = 0;
@@ -602,6 +602,7 @@ export const SHOTS = {
   orb_light: { glow: [1, .85, .5], r: .4, speed: 7.5, trail: 'light', hit: 'light', sfx: 'orb_hit', life: 4.5, homing: 2.1 },
   orb_dark: { glow: [1, .45, .15], r: .4, speed: 7.5, trail: 'dark', hit: 'fire', sfx: 'orb_hit', life: 4.5, homing: 2.1 },
   rain: { model: 'light_spear', scale: 1.4, r: .45, speed: 30, trail: 'light', hit: 'light', sfx: 'spear_hit', life: 1.2 },
+  shard: { model: 'debris_hell', scale: .32, r: .3, speed: 22, trail: 'dark', hit: 'stone', sfx: 'stone_hit', life: 1.1 },
   meteor: { model: 'fire_orb', scale: 2.4, r: .9, speed: 17, trail: 'fire', hit: 'fire', sfx: 'meteor_impact', life: 2.5, splash: 2.3, big: true },
 };
 let glowTex = null;
@@ -611,7 +612,7 @@ export class Shot {
     this.x = x; this.y = y; this.vx = Math.cos(ang) * c.speed; this.vy = Math.sin(ang) * c.speed;
     this.dmg = o.dmg || 8; this.life = c.life; this.r = c.r * 1.25; this.pierce = c.pierce || 0; this.hitSet = new Set(); this.target = o.target; this.aim = o.aim;
     this.obj = new THREE.Group();
-    if (c.model && Assets.has(c.model)) { const m = Assets.clone(c.model); m.scale.setScalar(c.scale * 1.35); this.obj.add(m); this.spin = kind.includes('fire') || kind === 'ember' || kind === 'meteor'; this.mesh = m; }
+    if (c.model && Assets.has(c.model)) { const m = Assets.clone(c.model); m.scale.setScalar(c.scale * 1.35); this.obj.add(m); this.spin = kind.includes('fire') || kind === 'ember' || kind === 'meteor' || kind === 'shard'; this.mesh = m; }
     else {
       if (!glowTex) { const cv = document.createElement('canvas'); cv.width = cv.height = 64; const x2 = cv.getContext('2d'); const gr = x2.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.3, 'rgba(255,255,255,.7)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x2.fillStyle = gr; x2.fillRect(0, 0, 64, 64); glowTex = new THREE.CanvasTexture(cv); }
       const col = c.glow || [1, .7, .3];

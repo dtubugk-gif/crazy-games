@@ -1,12 +1,13 @@
 // מלאכים נגד שדים - main: boot, title, face scan + verdict, the battle (waves, upgrades, boss), HUD, input, camera.
 import * as THREE from 'three';
-import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=3';
-import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=3';
-import { FX, C } from './fx.js?v=3';
-import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=3';
-import { SIDES, WAVES, UPGRADES, CREDITS } from './roster.js?v=3';
-import { FaceScan, paintVerdict, portrait } from './scan.js?v=3';
-import { Audio } from './audio.js?v=3';
+import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=4';
+import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=4';
+import { FX, C } from './fx.js?v=4';
+import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=4';
+import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=4';
+import { EvoPlayer } from './evolve.js?v=4';
+import { FaceScan, paintVerdict, portrait } from './scan.js?v=4';
+import { Audio } from './audio.js?v=4';
 
 const DEDICATION = 'המשחק מוקדש לישי'; // the follower who asked for the game
 const $ = id => document.getElementById(id);
@@ -93,7 +94,7 @@ class Game {
     this.lowEnd = this.renderer.userData.lowEnd;
     this.t = 0; this.state = 'boot'; this.paused = false; this.stopT = 0; this.slowT = 0; this.slowS = 1; this.shakeA = 0;
     this.cam = { x: 0, y: 6, z: 15.5, lx: 0, ly: 5.8, fov: 38 }; this.camGoal = { ...this.cam };
-    this.side = SIDES.angel; this.foe = SIDES.demon;
+    this.side = SIDES.angel; this.foe = SIDES.demon; this.mode = 'army';
     this.verdict = null; this.portraitURL = null; this.paintedPhoto = null;
     addEventListener('resize', () => this.resize()); this.resize();
     window.__audioUnlock = () => this.unlockAudio();
@@ -143,7 +144,7 @@ class Game {
   wireUI() {
     const click = (id, fn) => $(id).addEventListener('click', e => { this.unlockAudio(); this.sfx('ui_click'); fn(e); });
     click('bStart', () => this.openScan());
-    click('bAgain', () => { this.verdict = { side: this.save.last, pctAngel: this.save.pct, finger: true }; this.portraitURL = null; this.paintedPhoto = null; this.startBattle(); });
+    click('bAgain', () => { this.verdict = { side: this.save.last, pctAngel: this.save.pct, finger: true }; this.portraitURL = null; this.paintedPhoto = null; this.chooseMode(); });
     click('bHelp', () => this.showHelp());
     click('bCred', () => this.showCredits());
     click('bSound', () => this.toggleMute());
@@ -151,7 +152,8 @@ class Game {
     click('bSnap', () => this.snap());
     click('bNoCam', () => this.fingerScan());
     click('bRescan', () => this.openScan());
-    click('bFight', () => this.startBattle());
+    click('bFight', () => this.startBattle('army'));
+    click('bEvo', () => this.startBattle('evo'));
     click('bPause', () => this.pause(true));
     this.soundIcon();
   }
@@ -162,6 +164,7 @@ class Game {
   showHelp(then) {
     const o = this.overlay(`<h2>איך משחקים</h2>
       <p>סורק הנשמות מצלם את הפנים שלכם ומגלה אם אתם <b style="color:#ffe39a">מלאך</b> או <b style="color:#ff9a66">שד</b>. מלאך נלחם בשדים, שד נלחם במלאכים - ו<b>צבא שלם</b> מהצד שלכם נלחם איתכם! לוחמים שנופלים מוחלפים בתגבורת בכל גל.</p>
+      <p><b>מצב התפתחות</b>: לבד נגד כל סוגי האויבים. מתחילים כקטן והחלש ביותר, וכל אויב שמנצחים נותן כוח. כשמד הכוח מתמלא מתפתחים לצורה גדולה וחזקה יותר - ולכל צורה יש התקפות משלה.</p>
       <div class="help">
         <div><b>תעופה</b><br>${isPC ? 'WASD או החצים' : 'הג׳ויסטיק ביד שמאל'}</div>
         <div><b>התקפה</b> (קומבו של 3)<br>${isPC ? 'J או Z' : 'הכפתור הגדול'}</div>
@@ -337,14 +340,26 @@ class Game {
     const best = angel ? (r.sparkle > r.light ? 'הניצוץ בעיניים שלך' : 'האור הפנימי שלך') : (r.fire > r.shadow ? 'האש שבלב שלך' : 'הצללים סביבך');
     $('vText').innerHTML = angel ? `${best} הסגיר אותך: יש לך נשמה של מלאך. <b>השדים</b> תוקפים את השמיים - רק אתה יכול לעצור אותם!`
       : `${best} הסגירו אותך: יש לך נשמה של שד. <b>המלאכים</b> חוסמים את הדרך - הגיע הזמן לנצח אותם!`;
-    $('bFight').textContent = angel ? 'לקרב נגד השדים!' : 'לקרב נגד המלאכים!';
+    $('bFight').innerHTML = `מצב צבא<small>צבא ${angel ? 'מלאכים' : 'שדים'} נלחם איתך</small>`;
+    $('bEvo').innerHTML = `מצב התפתחות<small>מתחיל כ${FORMS[res.side][0].name} וגדל</small>`;
     this.audio.play(angel ? 'verdict_angel' : 'verdict_demon', { duck: .25 });
     this.music(null); this.audio.setAmbience({ amb_scan: 0, amb_heaven: angel ? .7 : 0, amb_hell: angel ? 0 : .7 });
   }
 
   // ---------------------------------------------------------------- battle
-  async startBattle() {
+  /** pick a mode without a new scan (title screen) */
+  chooseMode() {
+    const s = SIDES[this.verdict.side];
+    const o = this.overlay(`<h2>איזה קרב?</h2><p>אתה ${s.name}. איך נלחמים היום?</p>
+      <div id="ups"><button class="up" id="mArmy"><svg viewBox="0 0 48 48"><use href="#iWing"/></svg><b>מצב צבא</b><span>צבא שלם של ${s.names} נלחם איתך, 6 גלים</span></button>
+      <button class="up" id="mEvo"><svg viewBox="0 0 48 48"><use href="#iStar"/></svg><b>מצב התפתחות</b><span>מתחיל כ${FORMS[s.key][0].name}, מנצח ומתפתח עד ${FORMS[s.key][6].name}</span></button></div>`);
+    o.querySelector('#mArmy').onclick = () => { this.sfx('ui_click'); this.closeOverlay(); this.startBattle('army'); };
+    o.querySelector('#mEvo').onclick = () => { this.sfx('ui_click'); this.closeOverlay(); this.startBattle('evo'); };
+  }
+  get waves() { return this.mode === 'evo' ? EVO_WAVES : WAVES; }
+  async startBattle(mode) {
     const res = this.verdict; if (!res) return;
+    if (mode) this.mode = mode;
     this.side = SIDES[res.side]; this.foe = SIDES[this.side.enemy];
     document.body.classList.toggle('demon', res.side === 'demon'); document.body.classList.toggle('angel', res.side === 'angel');
     for (const id of ['title', 'scan', 'verdict', 'overlay']) $(id).classList.add('hidden');
@@ -354,12 +369,12 @@ class Game {
     if (need.length) { $('title').classList.remove('hidden'); $('tbtns').classList.add('hidden'); $('loadwrap').classList.remove('hidden'); $('logo').classList.add('hidden'); $('loadtxt').textContent = `מזמנים את הצבאות…`; $('fade').classList.remove('on'); await Assets.load(need, f => { $('loadfill').style.width = (f * 100).toFixed(0) + '%'; }); $('title').classList.add('hidden'); $('tbtns').classList.remove('hidden'); $('loadwrap').classList.add('hidden'); $('logo').classList.remove('hidden'); }
     for (const s of this.showcase) this.scene.remove(s.m.root); this.showcase = [];
     this.clearBattle();
-    this.player = new Player(this, this.side);
+    this.player = this.mode === 'evo' ? new EvoPlayer(this, this.side, 0) : new Player(this, this.side);
     this.wave = 0; this.kills = 0; this.score = 0; this.time0 = this.t; this.lives = 0;
     this.env.skyU.uBias.value = 0;
-    $('meImg').src = this.portraitURL || heroBadge(this.side.key); $('meName').textContent = this.side.name;
-    $('atkIco').setAttribute('href', this.side.weapon === 'sword' ? '#iSword' : '#iTrident'); $('shotIco').setAttribute('href', this.side.shot === 'spear' ? '#iSpear' : '#iFire');
-    $('specLbl').textContent = this.side.special;
+    $('meImg').src = this.portraitURL || heroBadge(this.side.key);
+    $('xpRow').classList.toggle('hidden', this.mode !== 'evo'); $('armyN').classList.toggle('hidden', this.mode !== 'army');
+    this.formButtons();
     $('hud').classList.remove('hidden'); $('controls').classList.toggle('hidden', isPC && !('ontouchstart' in window)); $('bossBar').classList.add('hidden');
     $('fade').classList.remove('on');
     this.state = 'intro'; this.hud();
@@ -368,7 +383,8 @@ class Game {
     const P = this.player; P.x = 0; P.y = 5.4; P.face = -this.side.homeDir;
     this.camGoal = { x: 0, y: 5.6, z: 8.5, lx: 0, ly: 5.4, fov: 38 }; Object.assign(this.cam, { ...this.camGoal, z: 7 });
     P.doAct('reveal', [{ t: .45, fn: () => { this.burstSide(P.x, P.y, 1.6); this.shake(.25); } }], { dur: 1.7 });
-    this.ui_banner(this.side.youAre, `הצבא שלך איתך - ${this.foe.names} בדרך!`);
+    if (this.mode === 'evo') this.ui_banner(`${FORMS[this.side.key][0].name}…`, `הכי קטן והכי חלש. נצח ${this.foe.names} ותתפתח!`);
+    else this.ui_banner(this.side.youAre, `הצבא שלך איתך - ${this.foe.names} בדרך!`);
     this.armyLost = 0; this.reinforce(true);
     this.after(2.1, () => { if (this.state !== 'intro') return; this.state = 'battle'; if (!this.save.help && isPC) this.hint(`תעופה: WASD · התקפה: J · זריקה: K · דאש: Shift · מיוחד: I`, 7); else if (!this.save.help) this.hint('ג׳ויסטיק לעוף · הכפתור הגדול תוקף · הזריקה מכוונת לבד', 7); this.save.help = true; writeSave(this.save); this.nextWave(); });
   }
@@ -386,7 +402,7 @@ class Game {
   }
   nextWave() {
     this.wave++; this.waveDone = false;
-    const W = WAVES[this.wave - 1];
+    const W = this.waves[this.wave - 1];
     this.queue = []; for (const [role, n] of W.spawn) for (let i = 0; i < n; i++) this.queue.push(role);
     this.cap = W.cap - (this.lowEnd ? 2 : 0); this.spawnT = .8; this.waveDef = W;
     if (this.wave > 1) this.reinforce(false);
@@ -413,6 +429,7 @@ class Game {
   armySize() { return [6, 6, 7, 7, 8, 8][Math.max(0, this.wave - 1)] + (this.player?.up.army || 0) * 2 - (this.lowEnd ? 2 : 0); }
   /** fill your army back up to its size; the first time they fly in behind you during the reveal */
   reinforce(first) {
+    if (this.mode !== 'army') return; // evolution mode: you fight alone
     const ROLES = ['small', 'heavy', 'caster', 'small', 'charger', 'diver', 'small', 'heavy', 'charger', 'diver', 'small', 'caster'];
     const alive = this.allies.filter(a => !a.dead);
     this.armyPending = this.armyPending || new Set(); // soldiers already on their way count too
@@ -434,6 +451,36 @@ class Game {
     }
     if (!first) { this.pop(this.player.x, this.player.y + 1.6, `+${n} לוחמים`, 'heal'); this.sfx('rival_appear', null, null, { vol: .35 }); }
   }
+  /** the buttons show this form's own moves */
+  formButtons() {
+    const P = this.player, tag = (id, t) => { $(id).querySelector('.tag').textContent = t; $(id).setAttribute('aria-label', t); };
+    if (P && P.evo) {
+      const f = P.form; $('atkIco').setAttribute('href', '#' + f.icons.attack); $('shotIco').setAttribute('href', '#' + f.icons.shoot);
+      tag('bAtk', f.names.attack); tag('bShot', f.names.shoot); $('specLbl').textContent = f.names.special; $('meName').textContent = f.name;
+    } else {
+      $('atkIco').setAttribute('href', this.side.weapon === 'sword' ? '#iSword' : '#iTrident'); $('shotIco').setAttribute('href', this.side.shot === 'spear' ? '#iSpear' : '#iFire');
+      tag('bAtk', 'התקפה'); tag('bShot', 'זריקה'); $('specLbl').textContent = this.side.special; $('meName').textContent = this.side.name;
+    }
+    this._lvlShown = null;
+  }
+  /** evolution: a burst, a slow-motion moment, and you come out as the next, bigger form */
+  evolve() {
+    const P = this.player;
+    if (!P || P.dead || !P.evo || this.evolving || P.level >= P.maxLevel || P.xp < EVO_XP[P.level + 1] || this.state !== 'battle') return;
+    this.evolving = true; P.inv = 3; this.slowmo(1.2, .3);
+    this.burstSide(P.x, P.y, 1.2); this.audio.play(this.side.key === 'angel' ? 'verdict_angel' : 'verdict_demon', { duck: .3 });
+    this.after(.35, () => {
+      if (!this.player || this.player.dead) { this.evolving = false; return; }
+      P.applyForm(P.level + 1); P.inv = 2;
+      this.burstSide(P.x, P.y, 2); this.shake(.5); P.doAct('reveal', [], { dur: 1 });
+      if (this.side.key === 'angel') this.fx.feathers(P.x, P.y, 26, 2); else this.fx.embers(P.x, P.y, 40, 2.5);
+      const n = P.form.names;
+      this.ui_banner('התפתחת!', `${P.form.name} · שלב ${P.level + 1}/7`);
+      this.hint(`התקפה: ${n.attack} · זריקה: ${n.shoot} · מיוחד: ${n.special}`, 6);
+      this.formButtons(); this.evolving = false;
+      this.after(.5, () => this.evolve()); // enough power for one more step?
+    });
+  }
   hurtAlly(a, dmg, fx, fy) {
     if (!a || a.dead || a.inv > 0 || this.state === 'ending' || this.state === 'intro') return;
     let d = Math.round(dmg);
@@ -451,7 +498,8 @@ class Game {
     }
   }
   spawn(role, o = {}) {
-    const hpMul = o.hpMul || 1;
+    let hpMul = o.hpMul || 1;
+    if (this.mode === 'evo') hpMul *= ({ rival: .9, boss: 1.15 }[role] || (1 + (this.wave - 1) * .13));
     const e = new Enemy(this, this.foe, role, { ...o, hpMul });
     e.m.fit.userData.s0 = e.m.fit.scale.x;
     if (!o.instant && o.x == null) e.vx = this.side.homeDir * 8; // fly in from the enemy side
@@ -468,7 +516,7 @@ class Game {
     }
     if (!this.queue.length && alive === 0 && !this.waveDone) {
       this.waveDone = true;
-      if (this.wave >= WAVES.length) return; // boss death handles the win
+      if (this.wave >= this.waves.length) return; // boss death handles the win
       this.sfx('wave_clear', null, null, { vol: .8 });
       this.ui_banner('הגל הובס!', this.wave === 4 ? 'משהו חזק מתקרב…' : '');
       this.after(1.6, () => this.offerUpgrades());
@@ -477,6 +525,7 @@ class Game {
   }
   offerUpgrades() {
     if (!this.player || this.player.dead) return;
+    if (this.mode === 'evo') { this.heal(Math.round(this.player.maxHp * .15)); this.after(.4, () => this.nextWave()); return; }
     this.state = 'upgrade';
     const P = this.player, pool = UPGRADES.filter(u => (u.id === 'heal' ? P.hp < P.maxHp * .8 : true) && (P.up[u.id] || 0) < u.max);
     const pick = []; while (pick.length < 3 && pool.length) pick.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
@@ -525,6 +574,8 @@ class Game {
     this.kills++; this.score += e.stats.score;
     const P = this.player;
     if (P.up.vamp) this.heal(4 * P.up.vamp, true);
+    if (P.evo && !e.summoned && P.gainXp(XP_GAIN[e.role] || 0)) this.after(.3, () => this.evolve());
+    else if (P.evo && e.summoned) P.gainXp(3);
     if (!e.summoned && (Math.random() < .17 || this.kills % 7 === 0) && e.role !== 'boss') this.orbs.push(new Orb(this, e.x, e.y));
     if (e.role === 'rival') { this.orbs.push(new Orb(this, e.x, e.y)); this.slowmo(.8, .35); this.ui_banner('האלוף הובס!', ''); }
     if (e.role === 'boss') this.bossDown(e);
@@ -540,6 +591,8 @@ class Game {
   }
   hurtPlayer(dmg, fx, fy, dot = false) {
     const P = this.player; if (!P || P.dead || P.inv > 0 || this.state === 'ending' || this.state === 'intro') return;
+    if (this.mode === 'evo') dmg = Math.ceil(dmg * 2.1); // alone against them all: every hit counts
+    if (P.blockT > 0) { dmg = Math.ceil(dmg * .15); this.fx.burst(P.x + P.face, P.y, 'block', 10); this.sfx('shield_block', P.x, P.y, { vol: .7, gap: .08 }); }
     P.hp -= dmg; P.inv = dot ? .15 : .75; P.setFlash(.12);
     const dx = P.x - fx, dy = P.y - fy, l = Math.hypot(dx, dy) || 1;
     if (!dot) { P.kx += dx / l * 9; P.ky += dy / l * 6; }
@@ -589,7 +642,7 @@ class Game {
   // ---------------------------------------------------------------- end screens
   win() {
     this.state = 'over';
-    const sec = Math.round(this.t - this.time0), key = this.side.key;
+    const sec = Math.round(this.t - this.time0), key = this.side.key + (this.mode === 'evo' ? '_evo' : '');
     this.save.wins[key] = (this.save.wins[key] || 0) + 1;
     const best = this.save.best[key]; const newBest = !best || sec < best; if (newBest) this.save.best[key] = sec; writeSave(this.save);
     this.audio.stinger('stinger_victory'); this.sfx('victory_cheer', null, null, { vol: .7 });
@@ -598,22 +651,22 @@ class Game {
     const other = SIDES[this.side.enemy];
     const o = this.overlay(`${this.portraitURL ? `<img class="endpic" src="${this.portraitURL}" alt="">` : ''}
       <h2>${this.side.names} ניצחו!</h2>${DEDICATION ? `<div class="dedicEnd">${DEDICATION} ❤</div>` : ''}
-      <p>${key === 'angel' ? 'מלך השדים נפל והשמיים בטוחים. כל הכבוד, מלאך!' : 'המלאך הגדול הובס והאש שולטת בשמיים. כל הכבוד, שד!'}</p>
-      <div class="stats"><div><b>${fmtTime(sec)}</b><span>${newBest ? 'שיא חדש!' : 'זמן'}</span></div><div><b>${this.kills}</b><span>אויבים</span></div><div><b>${this.allies.filter(a => !a.dead).length}</b><span>לוחמים שרדו</span></div><div><b>${this.save.wins[key]}</b><span>ניצחונות כ${this.side.name}</span></div></div>
-      <div class="row"><button class="big side" id="eAgain">עוד קרב</button><button class="big ${key === 'angel' ? 'ember' : ''}" id="eOther">לשחק כ${other.name}</button><button class="big sec" id="eScan">סריקה חדשה</button></div>`);
+      <p>${this.mode === 'evo' ? `התחלת כ${FORMS[this.side.key][0].name} והגעת עד ${this.player.form.name}!` : (this.side.key === 'angel' ? 'מלך השדים נפל והשמיים בטוחים. כל הכבוד, מלאך!' : 'המלאך הגדול הובס והאש שולטת בשמיים. כל הכבוד, שד!')}</p>
+      <div class="stats"><div><b>${fmtTime(sec)}</b><span>${newBest ? 'שיא חדש!' : 'זמן'}</span></div><div><b>${this.kills}</b><span>אויבים</span></div><div><b>${this.allies.filter(a => !a.dead).length}</b><span>לוחמים שרדו</span></div><div><b>${this.save.wins[key]}</b><span>ניצחונות כ${this.side.name}${this.mode === 'evo' ? ' (התפתחות)' : ''}</span></div></div>
+      <div class="row"><button class="big side" id="eAgain">עוד קרב</button><button class="big ${this.side.key === 'angel' ? 'ember' : ''}" id="eOther">לשחק כ${other.name}</button><button class="big sec" id="eScan">סריקה חדשה</button></div>`);
     this.endButtons(o);
   }
   lose() {
     this.state = 'over'; this.audio.stinger('stinger_defeat'); this.sfx('defeat', null, null, { vol: .7 });
-    const o = this.overlay(`<h2>נפלת בקרב…</h2><p>${this.foe.names} ניצחו הפעם, בגל ${this.wave} מתוך 6. נסו שוב - אפשר להמשיך מאותו הגל.</p>
+    const o = this.overlay(`<h2>נפלת בקרב…</h2><p>${this.foe.names} ניצחו הפעם, בגל ${this.wave} מתוך ${this.waves.length}. נסו שוב - אפשר להמשיך מאותו הגל.</p>
       <div class="row"><button class="big side" id="eRetry">שוב מגל ${this.wave}</button><button class="big sec" id="eAgain">מההתחלה</button><button class="big sec" id="eMenu">לתפריט</button></div>`);
     o.querySelector('#eRetry').onclick = () => { this.sfx('ui_click'); this.closeOverlay(); this.retryWave(); };
     this.endButtons(o);
   }
   endButtons(o) {
     const on = (id, fn) => { const b = o.querySelector('#' + id); if (b) b.onclick = () => { this.sfx('ui_click'); this.closeOverlay(); fn(); }; };
-    on('eAgain', () => this.startBattle());
-    on('eOther', () => { this.verdict = { ...this.verdict, side: this.side.enemy }; this.portraitURL = null; this.startBattle(); });
+    on('eAgain', () => this.startBattle(this.mode));
+    on('eOther', () => { this.verdict = { ...this.verdict, side: this.side.enemy }; this.portraitURL = null; this.startBattle(this.mode); });
     on('eScan', () => { this.clearBattle(); $('hud').classList.add('hidden'); $('controls').classList.add('hidden'); this.openScan(); });
     on('eMenu', () => this.toTitle());
   }
@@ -621,7 +674,10 @@ class Game {
     const w = this.wave, up = { ...this.player.up }, maxHp = this.player.maxHp;
     for (const e of this.enemies) e.remove(); this.enemies = []; for (const s of this.shots) s.remove(); this.shots = []; for (const o of this.orbs) o.remove(); this.orbs = [];
     this.timers = []; this.fx.clear(); this.boss = null; this.armyPending = new Set(); $('bossBar').classList.add('hidden');
-    this.player.remove(); this.player = new Player(this, this.side); this.player.up = up; this.player.maxHp = this.player.hp = maxHp;
+    const lvl = this.player.level || 0, xp = this.player.xp || 0;
+    this.player.remove(); this.player = this.mode === 'evo' ? new EvoPlayer(this, this.side, lvl) : new Player(this, this.side); this.player.up = up; this.player.maxHp = this.player.hp = maxHp;
+    if (this.player.evo) this.player.xp = xp;
+    this.formButtons();
     for (const a of this.allies) a.remove(); this.allies = [];
     this.player.inv = 2; this.wave = w - 1; this.waveDone = true; this.queue = []; this.state = 'battle';
     this.wave = w; this.reinforce(true); this.wave = w - 1;
@@ -651,7 +707,8 @@ class Game {
     $('bSpec').classList.toggle('ready', P.special >= 1);
     const c = $('bSpec').querySelector('.ring circle'); c.style.strokeDashoffset = 100 - P.special * 100;
     $('bShot').classList.toggle('cool', P.shotCd > .05);
-    $('waveN').textContent = `גל ${Math.max(1, this.wave)}/6`;
+    $('waveN').textContent = `גל ${Math.max(1, this.wave)}/${this.waves.length}`;
+    if (P.evo) { $('xpM').firstElementChild.style.transform = `scaleX(${P.xpFrac()})`; const lt = P.level >= P.maxLevel ? 'הצורה הכי חזקה!' : `שלב ${P.level + 1}/7`; if (lt !== this._lvlShown) { this._lvlShown = lt; $('xpLbl').textContent = lt; $('meName').textContent = P.form.name; } }
     const left = this.enemies.filter(e => !e.dead).length + (this.queue?.length || 0);
     $('waveLeft').textContent = this.wave ? (this.waveDef?.boss ? this.foe.roles.boss.name : `נשארו ${left} ${this.foe.names.replace('ה', '')}`) : '';
     const army = this.allies.filter(a => !a.dead).length;
@@ -697,6 +754,7 @@ class Game {
         const P = this.player, halfW = Math.tan(THREE.MathUtils.degToRad(this.camGoal.fov) / 2) * this.camGoal.z * this.camera.aspect;
         const lim = Math.max(0, ARENA.x1 + 1.5 - halfW);
         const cx = clamp(P.x * .75 - this.side.homeDir * 1.2, -lim, lim);
+        this.camGoal.z = P.evo ? P.form.cam : 15.5;
         this.camGoal.x = cx; this.camGoal.lx = cx; this.camGoal.y = clamp(6.1 + (P.y - 5.2) * .12, 5.8, 6.4); this.camGoal.ly = this.camGoal.y - .1;
       }
       // sky leans toward the side that is winning the screen: the enemy world grows behind the fight

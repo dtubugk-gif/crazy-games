@@ -90,3 +90,57 @@ export const CREDITS = [
   ['Demon Woman - Dwarf Idle', 'Walter Araujo', 'https://sketchfab.com/3d-models/demon-woman-dwarf-idle-25e9f3e893ff4afc8a1821b245fea2ca', 'מכשפת האש'],
   ['Angel - Tilt Brush', '3Donimus', 'https://sketchfab.com/3d-models/angel-tilt-brush-48b2042cc4184a5f9b5ccc6c24743b1a', 'מלאך הברק'],
 ];
+
+// ================================================================ evolution mode
+// you start as the smallest of your side and evolve, form by form, up to the biggest; every form fights its own way.
+// display = drawn scale (bodies grow every step), r = hit radius, cam = camera distance (it pulls back as you grow).
+// moves: attack / shoot / special are move ids in js/evolve.js; names are shown on the buttons and in the evolve banner.
+export const FORMS = {
+  angel: [
+    { model: 'cherub', name: 'כרוב קטן', display: 1.6, r: .45, hp: 70, speed: 10.5, dmg: .8, cam: 14,
+      moves: { attack: 'volley', shoot: 'goldArrow', special: 'arrowRain' }, names: { attack: 'מטח חיצים', shoot: 'חץ זהב', special: 'גשם חיצים' }, icons: { attack: 'iShot', shoot: 'iSpear' } },
+    { model: 'angel_priestess', name: 'כוהנת האור', display: 1.26, r: .55, hp: 90, speed: 9.8, dmg: .95, cam: 14.5,
+      moves: { attack: 'orbs', shoot: 'beam', special: 'pillar' }, names: { attack: 'כדורי אור', shoot: 'קרן אור', special: 'עמודי שמיים' }, icons: { attack: 'iOrb', shoot: 'iBolt' } },
+    { model: 'angel_hero', name: 'לוחם האור', display: 1.55, r: .8, hp: 115, speed: 9.4, dmg: 1.1, cam: 15.5,
+      moves: { attack: 'combo', shoot: 'throw', special: 'nova' }, names: { attack: 'קומבו חרב', shoot: 'רומח אור', special: 'אור שמימי' }, icons: { attack: 'iSword', shoot: 'iSpear' } },
+    { model: 'angel_lightning', name: 'מלאך הברק', display: 1.36, r: .85, hp: 140, speed: 10.2, dmg: 1.25, cam: 16,
+      moves: { attack: 'diveStrike', shoot: 'chain', special: 'storm' }, names: { attack: 'צלילת ברק', shoot: 'ברק שרשרת', special: 'סערת ברקים' }, icons: { attack: 'iDash', shoot: 'iBolt' } },
+    { model: 'valkyrie', name: 'ולקירית', display: 1.6, r: .9, hp: 170, speed: 9.6, dmg: 1.45, cam: 16.5,
+      moves: { attack: 'thrust', shoot: 'lanceCharge', special: 'spearWall' }, names: { attack: 'דקירת רומח', shoot: 'הסתערות', special: 'חומת רמחים' }, icons: { attack: 'iSpear', shoot: 'iDash' } },
+    { model: 'angel_knight', name: 'אביר אור', display: 1.57, r: 1, hp: 210, speed: 8.8, dmg: 1.65, cam: 17.5,
+      moves: { attack: 'bigSlash', shoot: 'shieldBlock', special: 'holyCharge' }, names: { attack: 'מכת חרב', shoot: 'מגן מחזיר', special: 'הסתערות קדושה' }, icons: { attack: 'iSword', shoot: 'iShield' } },
+    { model: 'archangel', name: 'המלאך הגדול', display: 1.08, r: 1.5, hp: 300, speed: 8.2, dmg: 2.1, cam: 20,
+      moves: { attack: 'sweep', shoot: 'spearRain', special: 'judgment' }, names: { attack: 'חרב הלהבה', shoot: 'גשם רמחים', special: 'יום הדין' }, icons: { attack: 'iSword', shoot: 'iSpear' } },
+  ],
+  demon: [
+    { model: 'imp', name: 'שדון קטן', display: 1.73, r: .45, hp: 70, speed: 10.5, dmg: .8, cam: 14,
+      moves: { attack: 'claws', shoot: 'emberShot', special: 'frenzy' }, names: { attack: 'שריטה', shoot: 'גץ אש', special: 'טירוף' }, icons: { attack: 'iClaw', shoot: 'iFire' } },
+    { model: 'demon_sorceress', name: 'מכשפת האש', display: 1.26, r: .55, hp: 90, speed: 9.8, dmg: .95, cam: 14.5,
+      moves: { attack: 'orbs', shoot: 'fireRing', special: 'emberStorm' }, names: { attack: 'כדורי צל', shoot: 'טבעת אש', special: 'סופת גצים' }, icons: { attack: 'iOrb', shoot: 'iFire' } },
+    { model: 'demon_hero', name: 'לוחם האש', display: 1.51, r: .8, hp: 115, speed: 9.4, dmg: 1.1, cam: 15.5,
+      moves: { attack: 'combo', shoot: 'throw', special: 'nova' }, names: { attack: 'קומבו קלשון', shoot: 'כדור אש', special: 'סערת אש' }, icons: { attack: 'iTrident', shoot: 'iFire' } },
+    { model: 'gargoyle', name: 'גרגויל', display: 1.88, r: .85, hp: 140, speed: 10.2, dmg: 1.25, cam: 16,
+      moves: { attack: 'diveStrike', shoot: 'shards', special: 'stoneSkin' }, names: { attack: 'צלילת אבן', shoot: 'רסיסי אבן', special: 'עור אבן' }, icons: { attack: 'iDash', shoot: 'iShot' } },
+    { model: 'pig_demon', name: 'שד חזיר', display: 1.6, r: .9, hp: 170, speed: 9.6, dmg: 1.45, cam: 16.5,
+      moves: { attack: 'bite', shoot: 'ram', special: 'squeal' }, names: { attack: 'נשיכה', shoot: 'דהירה', special: 'צווחת אימה' }, icons: { attack: 'iClaw', shoot: 'iDash' } },
+    { model: 'brute', name: 'שד ענק', display: 1.38, r: 1, hp: 210, speed: 8.8, dmg: 1.65, cam: 17.5,
+      moves: { attack: 'clubSmash', shoot: 'roarStun', special: 'quake' }, names: { attack: 'מכת אלה', shoot: 'שאגה', special: 'רעידת אדמה' }, icons: { attack: 'iClub', shoot: 'iRoar' } },
+    { model: 'demon_king', name: 'מלך השדים', display: 1.08, r: 1.5, hp: 300, speed: 8.2, dmg: 2.1, cam: 20,
+      moves: { attack: 'sweep', shoot: 'breath', special: 'meteorRain' }, names: { attack: 'מכת טופר', shoot: 'נשימת אש', special: 'גשם מטאורים' }, icons: { attack: 'iClaw', shoot: 'iFire' } },
+  ],
+};
+// total power needed to reach each form (form 1 = 0)
+export const EVO_XP = [0, 40, 110, 210, 330, 480, 700];
+// power a defeated enemy gives
+export const XP_GAIN = { small: 10, diver: 14, caster: 16, charger: 18, heavy: 30, rival: 90, boss: 0 };
+// solo against every kind of the other side: 8 waves, the last is their boss; [role, count]
+export const EVO_WAVES = [
+  { n: 1, title: 'כולם גדולים ממך!', spawn: [['small', 5]], cap: 3 },
+  { n: 2, title: 'צוללים מהשמיים', spawn: [['small', 3], ['diver', 2], ['small', 2]], cap: 4 },
+  { n: 3, title: 'מסתערים', spawn: [['charger', 2], ['small', 3], ['caster', 1]], cap: 4 },
+  { n: 4, title: 'הענק מגיע', spawn: [['heavy', 1], ['small', 3], ['diver', 2], ['caster', 1]], cap: 5 },
+  { n: 5, title: 'כל הסוגים ביחד', spawn: [['charger', 2], ['heavy', 1], ['diver', 2], ['small', 3], ['caster', 1]], cap: 5 },
+  { n: 6, title: 'האלוף', spawn: [['rival', 1], ['small', 3], ['caster', 1]], cap: 3, rival: true },
+  { n: 7, title: 'הצבא האחרון', spawn: [['heavy', 2], ['charger', 2], ['diver', 2], ['caster', 2], ['small', 4]], cap: 6 },
+  { n: 8, title: 'הקרב האחרון', spawn: [['boss', 1], ['small', 2]], cap: 3, boss: true },
+];
