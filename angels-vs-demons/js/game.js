@@ -1,13 +1,13 @@
 // מלאכים נגד שדים - main: boot, title, face scan + verdict, the battle (waves, upgrades, boss), HUD, input, camera.
 import * as THREE from 'three';
-import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=5';
-import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=5';
-import { FX, C } from './fx.js?v=5';
-import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=5';
-import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=5';
-import { EvoPlayer } from './evolve.js?v=5';
-import { FaceScan, paintVerdict, portrait } from './scan.js?v=5';
-import { Audio } from './audio.js?v=5';
+import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=6';
+import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=6';
+import { FX, C } from './fx.js?v=6';
+import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=6';
+import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=6';
+import { EvoPlayer } from './evolve.js?v=6';
+import { FaceScan, paintVerdict, portrait } from './scan.js?v=6';
+import { Audio } from './audio.js?v=6';
 
 const DEDICATION = 'המשחק מוקדש לישי'; // the follower who asked for the game
 const $ = id => document.getElementById(id);
@@ -85,6 +85,15 @@ class Game {
     this.canvas = $('c');
     this.renderer = makeRenderer(this.canvas);
     this.env = makeScene(this.renderer); this.scene = this.env.scene;
+    // the title has its own little scene: a painted sky behind the two real 3D heroes
+    this.titleScene = new THREE.Scene(); this.titleScene.environment = this.scene.environment; this.titleScene.environmentIntensity = .75;
+    this.titleBg = new THREE.TextureLoader().load('ui/bg_title3d.webp', () => this.fitTitleBg()); this.titleBg.colorSpace = THREE.SRGBColorSpace;
+    this.titleScene.background = this.titleBg;
+    { const T = this.titleScene;
+      T.add(new THREE.HemisphereLight(0xfff0dc, 0x5a2a1a, 1.2));
+      const key = new THREE.DirectionalLight(0xffe6b8, 2.6); key.position.set(-9, 9, 10); T.add(key);   // heaven sun from the left
+      const fire = new THREE.DirectionalLight(0xff6a2a, 1.8); fire.position.set(10, 1, 6); T.add(fire);  // lava glow from the right
+      const rim = new THREE.DirectionalLight(0xfff0dc, 2.4); rim.position.set(0, 7, -10); T.add(rim); }
     this.camera = new THREE.PerspectiveCamera(38, 2, .1, 900);
     this.camera.position.set(0, 6, 15.5);
     this.fx = new FX(this.scene, this.camera);
@@ -102,10 +111,16 @@ class Game {
     window.__game = this;
     this.boot();
   }
+  /** cover-fit the painted title sky to the screen shape */
+  fitTitleBg() {
+    const t = this.titleBg; if (!t || !t.image) return;
+    const ia = t.image.width / t.image.height, a = this.camera.aspect;
+    if (a > ia) { t.repeat.set(1, ia / a); t.offset.set(0, (1 - ia / a) / 2); } else { t.repeat.set(a / ia, 1); t.offset.set((1 - a / ia) / 2, 0); }
+  }
   resize() {
     const w = innerWidth || screen.width, h = innerHeight || screen.height;
     this.renderer.setSize(w, h, false);
-    this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
+    this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); this.fitTitleBg?.();
     this.fx.setScale(h * this.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2)));
   }
   async unlockAudio() { if (this.audio.ready) { this.audio.resume(); return; } await this.audio.unlock(); this.music(this.state === 'title' ? 'music_title' : null); }
@@ -133,9 +148,9 @@ class Game {
     $('title').classList.remove('hidden');
     if (this.save.last) { $('bAgain').classList.remove('hidden'); $('lastSide').textContent = SIDES[this.save.last].name; } else $('bAgain').classList.add('hidden');
     // showcase: the two heroes face each other in the middle of the sky
-    for (const s of this.showcase) this.scene.remove(s.m.root); this.showcase = [];
-    const mk = (name, x, face) => { const m = makeModel(name, 1.5); m.root.position.set(x, 4.2, 2); m.turn.rotation.y = face * 1.15; this.scene.add(m.root); const a = animName(m.anim, 'idle'); if (a) m.anim.play(a); this.showcase.push({ m, x, face, ph: rnd(0, 6) }); };
-    // the title shows painted key art now; the 3D heroes stay in the battle
+    for (const s of this.showcase) this.titleScene.remove(s.m.root); this.showcase = [];
+    const mk = (name, x, face) => { const m = makeModel(name, 1.9); m.root.position.set(x, 4.0, 2); m.turn.rotation.y = face * 1.1; this.titleScene.add(m.root); const a = animName(m.anim, 'idle'); if (a) m.anim.play(a); this.showcase.push({ m, x, face, ph: rnd(0, 6) }); };
+    mk('angel_hero', -6.4, 1); mk('demon_hero', 6.4, -1);
     this.camGoal = { x: 0, y: 5, z: 12, lx: 0, ly: 4.8, fov: 38 };
     if (first) Object.assign(this.cam, this.camGoal);
     this.env.skyU.uBias.value = 0;
@@ -151,7 +166,6 @@ class Game {
     click('scanBack', () => { this.scan?.stop(); this.toTitle(); });
     click('bSnap', () => this.snap());
     click('bNoCam', () => this.fingerScan());
-    click('bRescan', () => this.openScan());
     click('bFight', () => this.startBattle('army'));
     click('bEvo', () => this.startBattle('evo'));
     click('bPause', () => this.pause(true));
@@ -368,7 +382,7 @@ class Game {
     // make sure the enemy side is loaded
     const need = [...SIDE_MODELS[this.foe.key], ...SIDE_MODELS[this.side.key]].filter(n => !Assets.has(n) && !Assets.missing.includes(n));
     if (need.length) { $('title').classList.remove('hidden'); $('tbtns').classList.add('hidden'); $('loadwrap').classList.remove('hidden'); $('logo').classList.add('hidden'); $('loadtxt').textContent = `מזמנים את הצבאות…`; $('fade').classList.remove('on'); await Assets.load(need, f => { $('loadfill').style.width = (f * 100).toFixed(0) + '%'; }); $('title').classList.add('hidden'); $('tbtns').classList.remove('hidden'); $('loadwrap').classList.add('hidden'); $('logo').classList.remove('hidden'); }
-    for (const s of this.showcase) this.scene.remove(s.m.root); this.showcase = [];
+    for (const s of this.showcase) this.titleScene.remove(s.m.root); this.showcase = [];
     this.clearBattle();
     this.player = this.mode === 'evo' ? new EvoPlayer(this, this.side, 0) : new Player(this, this.side);
     this.wave = 0; this.kills = 0; this.score = 0; this.time0 = this.t; this.lives = 0;
@@ -662,7 +676,7 @@ class Game {
       <h2>${this.side.names} ניצחו!</h2>${DEDICATION ? `<div class="dedicEnd">${DEDICATION} ❤</div>` : ''}
       <p>${this.mode === 'evo' ? `התחלת כ${FORMS[this.side.key][0].name} והגעת עד ${this.player.form.name}!` : (this.side.key === 'angel' ? 'מלך השדים נפל והשמיים בטוחים. כל הכבוד, מלאך!' : 'המלאך הגדול הובס והאש שולטת בשמיים. כל הכבוד, שד!')}</p>
       <div class="stats"><div><b>${fmtTime(sec)}</b><span>${newBest ? 'שיא חדש!' : 'זמן'}</span></div><div><b>${this.kills}</b><span>אויבים</span></div><div><b>${this.allies.filter(a => !a.dead).length}</b><span>לוחמים שרדו</span></div><div><b>${this.save.wins[key]}</b><span>ניצחונות כ${this.side.name}${this.mode === 'evo' ? ' (התפתחות)' : ''}</span></div></div>
-      <div class="row"><button class="big side" id="eAgain"><img class="bi" src="ui/ic/ui_again.webp" alt="" draggable="false"><span class="bt">עוד קרב</span></button><button class="big ${this.side.key === 'angel' ? 'ember' : ''}" id="eOther"><img class="bi" src="ui/ic/ui_fight.webp" alt="" draggable="false"><span class="bt">לשחק כ${other.name}</span></button><button class="big sec" id="eScan"><img class="bi" src="ui/ic/ui_rescan.webp" alt="" draggable="false"><span class="bt">סריקה חדשה</span></button></div>`);
+      <div class="row"><button class="big side" id="eAgain"><img class="bi" src="ui/ic/ui_again.webp" alt="" draggable="false"><span class="bt">עוד קרב</span></button><button class="big ${this.side.key === 'angel' ? 'ember' : ''}" id="eOther"><img class="bi" src="ui/ic/ui_fight.webp" alt="" draggable="false"><span class="bt">לשחק כ${other.name}</span></button><button class="big sec" id="eScan"><img class="bi" src="ui/ic/ui_rescan.webp" alt="" draggable="false"><span class="bt">סריקה חדשה</span></button><button class="big sec" id="eMenu"><img class="bi" src="ui/ic/ui_menu.webp" alt="" draggable="false"><span class="bt">לתפריט</span></button></div>`);
     this.endButtons(o);
   }
   lose() {
@@ -772,7 +786,7 @@ class Game {
     }
     // title showcase hover
     const hw = Math.tan(THREE.MathUtils.degToRad(19)) * 10 * this.camera.aspect; // half width of the view at the heroes' depth
-    for (const s of this.showcase) { s.m.anim.update(raw); s.m.root.position.x = -s.face * Math.min(6.4, hw * .72); s.m.root.position.y = 4.2 + Math.sin(this.t * 1.6 + s.ph) * .15; }
+    for (const s of this.showcase) { s.m.anim.update(raw); s.m.root.position.x = -s.face * Math.min(6.4, hw * .72); s.m.root.position.y = 4.0 + Math.sin(this.t * 1.6 + s.ph) * .15; s.m.turn.rotation.z = Math.sin(this.t * .9 + s.ph) * .04; }
     this.fx.update(dt);
     updateWorld(this.env, raw, this.cam.x);
     // camera smoothing + shake
@@ -783,7 +797,8 @@ class Game {
     this.camera.position.set(this.cam.x + rnd(-s, s), this.cam.y + rnd(-s, s), this.cam.z);
     this.camera.lookAt(this.cam.lx, this.cam.ly, 0);
     if (this.audio.ready) this.audio.setListener({ x: this.cam.x, y: this.cam.y, z: 8 }, { x: 0, y: 0, z: -1 });
-    if (!['title', 'scan', 'verdict', 'boot'].includes(this.state)) this.renderer.render(this.scene, this.camera); // menus are painted full-screen
+    if (this.state === 'title' || this.state === 'boot') this.renderer.render(this.titleScene, this.camera); // painted sky + the 3D heroes
+    else if (this.state !== 'scan' && this.state !== 'verdict') this.renderer.render(this.scene, this.camera); // scan / result screens are painted full-screen
   }
 }
 

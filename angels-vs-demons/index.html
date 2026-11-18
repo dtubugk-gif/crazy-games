@@ -66,9 +66,9 @@ body.demon .big.side{color:#fff1e2; background:linear-gradient(180deg,#f08a52,#d
 h1,h2,h3{font-family:var(--display); margin:0; font-weight:900}
 
 /* ---------- title ---------- */
-#title{position:fixed; inset:0; z-index:20; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background-color:#1b1420;
+#title{position:fixed; inset:0; z-index:20; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
   padding:calc(12px + var(--st)) max(16px, var(--sr)) calc(12px + var(--sb)) max(16px, var(--sl));
-  background-image:radial-gradient(ellipse 46% 60% at 50% 46%, rgba(10,6,8,.38), rgba(10,6,8,0) 70%), linear-gradient(180deg, rgba(10,6,8,0) 70%, rgba(10,6,8,.55)), url(ui/bg_title.webp);
+  background-image:radial-gradient(ellipse 46% 60% at 50% 46%, rgba(10,6,8,.38), rgba(10,6,8,0) 70%), linear-gradient(180deg, rgba(10,6,8,0) 70%, rgba(10,6,8,.55));
   background-size:cover; background-position:center}
 #logo{text-align:center; filter:drop-shadow(0 6px 18px rgba(0,0,0,.6))}
 #logo h1{font-size:clamp(40px,8.4vw,86px); line-height:.95; letter-spacing:.5px; display:flex; align-items:center; gap:.25em; justify-content:center}
@@ -373,9 +373,6 @@ body.angel #bossBar .meter i{background:linear-gradient(180deg,#f08a52,#8e2a10)}
       <button class="modeBtn" id="bFight"><img src="ui/mode_army.webp" alt=""><b>מצב צבא</b><small id="bFightS"></small></button>
       <button class="modeBtn" id="bEvo"><img id="bEvoImg" src="ui/mode_evo.webp" alt=""><b>מצב התפתחות</b><small id="bEvoS"></small></button>
     </div>
-    <div class="row" style="justify-content:flex-start; margin-top:2px">
-      <button class="big sec" id="bRescan"><img class="bi" src="ui/ic/ui_rescan.webp" alt="" draggable="false"><span class="bt">סריקה חוזרת</span></button>
-    </div>
     <div id="vNote">זה משחק: הסורק קורא אור, צבעים וצורה מהתמונה, בשביל הכיף.</div>
   </div>
 </div>
@@ -415,6 +412,6 @@ body.angel #bossBar .meter i{background:linear-gradient(180deg,#f08a52,#8e2a10)}
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
 } }
 </script>
-<script type="module" src="js/game.js?v=5"></script>
+<script type="module" src="js/game.js?v=6"></script>
 </body>
 </html>
