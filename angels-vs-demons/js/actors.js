@@ -1,10 +1,10 @@
 // Actors: the player (angel or demon hero), the 6 enemy roles of each side with their own AI, projectiles, heal orbs.
 // Everything lives on the 2D plane z = 0; models turn ~60° toward the way they face so wings and weapons read.
 import * as THREE from 'three';
-import { Assets, Anim, node, ownMaterials } from './assets.js?v=4';
-import { HEIGHT, ROLE_STATS } from './roster.js?v=4';
-import { ARENA } from './world.js?v=4';
-import { C } from './fx.js?v=4';
+import { Assets, Anim, node, ownMaterials } from './assets.js?v=5';
+import { HEIGHT, ROLE_STATS } from './roster.js?v=5';
+import { ARENA } from './world.js?v=5';
+import { C } from './fx.js?v=5';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -130,6 +130,9 @@ export class Player extends Actor {
     const g = this.g;
     if (this.dead) { this.vy -= 6 * dt; this.y += this.vy * dt; this.updateVisual(dt); return; }
     this.inv = Math.max(0, this.inv - dt); this.shotCd -= dt; this.dashCd -= dt; this.comboT -= dt;
+    // slow natural healing: a few points every couple of seconds
+    this.regenT = (this.regenT ?? 2) - dt;
+    if (this.regenT <= 0) { this.regenT = 2; if (this.hp < this.maxHp && g.state === 'battle') g.regen(this); }
     this.tickAct(dt);
     const busy = this.act && this.act !== 'cast';
     // movement
