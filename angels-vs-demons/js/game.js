@@ -1,13 +1,13 @@
 // מלאכים נגד שדים - main: boot, title, face scan + verdict, the battle (waves, upgrades, boss), HUD, input, camera.
 import * as THREE from 'three';
-import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=6';
-import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=6';
-import { FX, C } from './fx.js?v=6';
-import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=6';
-import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=6';
-import { EvoPlayer } from './evolve.js?v=6';
-import { FaceScan, paintVerdict, portrait } from './scan.js?v=6';
-import { Audio } from './audio.js?v=6';
+import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=7';
+import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=7';
+import { FX, C } from './fx.js?v=7';
+import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=7';
+import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=7';
+import { EvoPlayer } from './evolve.js?v=7';
+import { FaceScan, paintVerdict, portrait } from './scan.js?v=7';
+import { Audio } from './audio.js?v=7';
 
 const DEDICATION = 'המשחק מוקדש לישי'; // the follower who asked for the game
 const $ = id => document.getElementById(id);
@@ -150,7 +150,7 @@ class Game {
     // showcase: the two heroes face each other in the middle of the sky
     for (const s of this.showcase) this.titleScene.remove(s.m.root); this.showcase = [];
     const mk = (name, x, face) => { const m = makeModel(name, 1.9); m.root.position.set(x, 4.0, 2); m.turn.rotation.y = face * 1.1; this.titleScene.add(m.root); const a = animName(m.anim, 'idle'); if (a) m.anim.play(a); this.showcase.push({ m, x, face, ph: rnd(0, 6) }); };
-    mk('angel_hero', -6.4, 1); mk('demon_hero', 6.4, -1);
+    // the title shows the painted key art (owner's choice); the 3D heroes appear in the battle
     this.camGoal = { x: 0, y: 5, z: 12, lx: 0, ly: 4.8, fov: 38 };
     if (first) Object.assign(this.cam, this.camGoal);
     this.env.skyU.uBias.value = 0;
@@ -681,9 +681,8 @@ class Game {
   }
   lose() {
     this.state = 'over'; this.audio.stinger('stinger_defeat'); this.sfx('defeat', null, null, { vol: .7 });
-    const o = this.overlay(`<h2>נפלת בקרב…</h2><p>${this.foe.names} ניצחו הפעם, בגל ${this.wave} מתוך ${this.waves.length}. נסו שוב - אפשר להמשיך מאותו הגל.</p>
-      <div class="row"><button class="big side" id="eRetry"><img class="bi" src="ui/ic/ui_again.webp" alt="" draggable="false"><span class="bt">שוב מגל ${this.wave}</span></button><button class="big sec" id="eAgain"><img class="bi" src="ui/ic/ui_again.webp" alt="" draggable="false"><span class="bt">מההתחלה</span></button><button class="big sec" id="eMenu"><img class="bi" src="ui/ic/ui_menu.webp" alt="" draggable="false"><span class="bt">לתפריט</span></button></div>`);
-    o.querySelector('#eRetry').onclick = () => { this.sfx('ui_click'); this.closeOverlay(); this.retryWave(); };
+    const o = this.overlay(`<h2>נפלת בקרב…</h2><p>${this.foe.names} ניצחו הפעם, בגל ${this.wave} מתוך ${this.waves.length}. נסו שוב!</p>
+      <div class="row"><button class="big side" id="eAgain"><img class="bi" src="ui/ic/ui_again.webp" alt="" draggable="false"><span class="bt">מההתחלה</span></button><button class="big sec" id="eMenu"><img class="bi" src="ui/ic/ui_menu.webp" alt="" draggable="false"><span class="bt">לתפריט</span></button></div>`);
     this.endButtons(o);
   }
   endButtons(o) {
@@ -797,8 +796,7 @@ class Game {
     this.camera.position.set(this.cam.x + rnd(-s, s), this.cam.y + rnd(-s, s), this.cam.z);
     this.camera.lookAt(this.cam.lx, this.cam.ly, 0);
     if (this.audio.ready) this.audio.setListener({ x: this.cam.x, y: this.cam.y, z: 8 }, { x: 0, y: 0, z: -1 });
-    if (this.state === 'title' || this.state === 'boot') this.renderer.render(this.titleScene, this.camera); // painted sky + the 3D heroes
-    else if (this.state !== 'scan' && this.state !== 'verdict') this.renderer.render(this.scene, this.camera); // scan / result screens are painted full-screen
+    if (!['title', 'scan', 'verdict', 'boot'].includes(this.state)) this.renderer.render(this.scene, this.camera); // menus are painted full-screen
   }
 }
 
