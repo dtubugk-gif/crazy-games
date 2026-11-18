@@ -1,14 +1,15 @@
 // מלאכים נגד שדים - main: boot, title, face scan + verdict, the battle (waves, upgrades, boss), HUD, input, camera.
 import * as THREE from 'three';
-import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=8';
-import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=8';
-import { FX, C } from './fx.js?v=8';
-import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=8';
-import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=8';
-import { EvoPlayer } from './evolve.js?v=8';
-import { FaceScan, paintVerdict, portrait } from './scan.js?v=8';
-import { Audio } from './audio.js?v=8';
+import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=9';
+import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=9';
+import { FX, C } from './fx.js?v=9';
+import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=9';
+import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=9';
+import { EvoPlayer } from './evolve.js?v=9';
+import { FaceScan, paintVerdict, portrait } from './scan.js?v=9';
+import { Audio } from './audio.js?v=9';
 
+const BUILD = 9; // bump with version.json on every deploy
 const DEDICATION = 'המשחק מוקדש לישי'; // the follower who asked for the game
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -131,6 +132,12 @@ class Game {
 
   // ---------------------------------------------------------------- boot + title
   async boot() {
+    // a phone may still hold an old copy of the page: if the site has a newer build, load it once (fresh URL skips the cache)
+    fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(v => {
+      if (!v || !(v.build > BUILD)) return;
+      let seen = null; try { seen = sessionStorage.getItem('avd-build'); sessionStorage.setItem('avd-build', String(v.build)); } catch (e) { }
+      if (seen !== String(v.build)) location.replace(location.pathname + '?b=' + v.build + location.hash);
+    }).catch(() => { });
     if (DEDICATION) { $('dedic').textContent = DEDICATION + ' ❤'; $('dedic').classList.remove('hidden'); }
     this.audio.preload();
     this.renderer.setAnimationLoop(() => this.frame());
@@ -693,20 +700,7 @@ class Game {
     on('eScan', () => { this.clearBattle(); $('hud').classList.add('hidden'); $('controls').classList.add('hidden'); this.openScan(); });
     on('eMenu', () => this.toTitle());
   }
-  retryWave() {
-    const w = this.wave, up = { ...this.player.up }, maxHp = this.player.maxHp;
-    for (const e of this.enemies) e.remove(); this.enemies = []; for (const s of this.shots) s.remove(); this.shots = []; for (const o of this.orbs) o.remove(); this.orbs = [];
-    this.timers = []; this.fx.clear(); this.boss = null; this.armyPending = new Set(); $('bossBar').classList.add('hidden');
-    const lvl = this.player.level || 0, xp = this.player.xp || 0;
-    this.player.remove(); this.player = this.mode === 'evo' ? new EvoPlayer(this, this.side, lvl) : new Player(this, this.side); this.player.up = up; this.player.maxHp = this.player.hp = maxHp;
-    if (this.player.evo) this.player.xp = xp;
-    this.formButtons();
-    for (const a of this.allies) a.remove(); this.allies = [];
-    this.player.inv = 2; this.wave = w - 1; this.waveDone = true; this.queue = []; this.state = 'battle';
-    this.wave = w; this.reinforce(true); this.wave = w - 1;
-    this.music(this.side.music); this.burstSide(this.player.x, this.player.y, 1);
-    this.after(.8, () => this.nextWave());
-  }
+
   pause(on) {
     if (on) {
       if (this.state !== 'battle' || this.paused) return; this.paused = true; this.audio.duckMusic(.35, 99);
