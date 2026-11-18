@@ -1,14 +1,14 @@
 // מלאכים נגד שדים - main: boot, title, face scan + verdict, the battle (waves, upgrades, boss), HUD, input, camera.
 import * as THREE from 'three';
-import { Assets, COMMON, SIDE_MODELS } from './assets.js';
-import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js';
-import { FX, C } from './fx.js';
-import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js';
-import { SIDES, WAVES, UPGRADES, CREDITS } from './roster.js';
-import { FaceScan, paintVerdict, portrait } from './scan.js';
-import { Audio } from './audio.js';
+import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=3';
+import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=3';
+import { FX, C } from './fx.js?v=3';
+import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=3';
+import { SIDES, WAVES, UPGRADES, CREDITS } from './roster.js?v=3';
+import { FaceScan, paintVerdict, portrait } from './scan.js?v=3';
+import { Audio } from './audio.js?v=3';
 
-const DEDICATION = ''; // e.g. 'המשחק מוקדש ל...' (filled in when the follower's name is known)
+const DEDICATION = 'המשחק מוקדש לישי'; // the follower who asked for the game
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -89,7 +89,8 @@ class Game {
     this.fx = new FX(this.scene, this.camera);
     this.audio = new Audio(); this.audio.vol = this.save.vol;
     this.input = new Input();
-    this.enemies = []; this.shots = []; this.orbs = []; this.timers = []; this.showcase = [];
+    this.enemies = []; this.allies = []; this.shots = []; this.orbs = []; this.timers = []; this.showcase = [];
+    this.lowEnd = this.renderer.userData.lowEnd;
     this.t = 0; this.state = 'boot'; this.paused = false; this.stopT = 0; this.slowT = 0; this.slowS = 1; this.shakeA = 0;
     this.cam = { x: 0, y: 6, z: 15.5, lx: 0, ly: 5.8, fov: 38 }; this.camGoal = { ...this.cam };
     this.side = SIDES.angel; this.foe = SIDES.demon;
@@ -113,7 +114,7 @@ class Game {
 
   // ---------------------------------------------------------------- boot + title
   async boot() {
-    if (DEDICATION) { $('dedic').textContent = DEDICATION; $('dedic').classList.remove('hidden'); }
+    if (DEDICATION) { $('dedic').textContent = DEDICATION + ' ❤'; $('dedic').classList.remove('hidden'); }
     this.audio.preload();
     this.renderer.setAnimationLoop(() => this.frame());
     await Assets.load(COMMON, f => { $('loadfill').style.width = (f * 100).toFixed(0) + '%'; });
@@ -160,7 +161,7 @@ class Game {
   closeOverlay() { $('overlay').classList.add('hidden'); $('overlay').innerHTML = ''; }
   showHelp(then) {
     const o = this.overlay(`<h2>איך משחקים</h2>
-      <p>סורק הנשמות מצלם את הפנים שלכם ומגלה אם אתם <b style="color:#ffe39a">מלאך</b> או <b style="color:#ff9a66">שד</b>. מלאך נלחם בשדים, שד נלחם במלאכים.</p>
+      <p>סורק הנשמות מצלם את הפנים שלכם ומגלה אם אתם <b style="color:#ffe39a">מלאך</b> או <b style="color:#ff9a66">שד</b>. מלאך נלחם בשדים, שד נלחם במלאכים - ו<b>צבא שלם</b> מהצד שלכם נלחם איתכם! לוחמים שנופלים מוחלפים בתגבורת בכל גל.</p>
       <div class="help">
         <div><b>תעופה</b><br>${isPC ? 'WASD או החצים' : 'הג׳ויסטיק ביד שמאל'}</div>
         <div><b>התקפה</b> (קומבו של 3)<br>${isPC ? 'J או Z' : 'הכפתור הגדול'}</div>
@@ -349,8 +350,8 @@ class Game {
     for (const id of ['title', 'scan', 'verdict', 'overlay']) $(id).classList.add('hidden');
     $('fade').classList.add('on'); await this.wait(.35);
     // make sure the enemy side is loaded
-    const need = SIDE_MODELS[this.foe.key].filter(n => !Assets.has(n) && !Assets.missing.includes(n));
-    if (need.length) { $('title').classList.remove('hidden'); $('tbtns').classList.add('hidden'); $('loadwrap').classList.remove('hidden'); $('logo').classList.add('hidden'); $('loadtxt').textContent = `מזמנים את ${this.foe.names}…`; $('fade').classList.remove('on'); await Assets.load(need, f => { $('loadfill').style.width = (f * 100).toFixed(0) + '%'; }); $('title').classList.add('hidden'); $('tbtns').classList.remove('hidden'); $('loadwrap').classList.add('hidden'); $('logo').classList.remove('hidden'); }
+    const need = [...SIDE_MODELS[this.foe.key], ...SIDE_MODELS[this.side.key]].filter(n => !Assets.has(n) && !Assets.missing.includes(n));
+    if (need.length) { $('title').classList.remove('hidden'); $('tbtns').classList.add('hidden'); $('loadwrap').classList.remove('hidden'); $('logo').classList.add('hidden'); $('loadtxt').textContent = `מזמנים את הצבאות…`; $('fade').classList.remove('on'); await Assets.load(need, f => { $('loadfill').style.width = (f * 100).toFixed(0) + '%'; }); $('title').classList.add('hidden'); $('tbtns').classList.remove('hidden'); $('loadwrap').classList.add('hidden'); $('logo').classList.remove('hidden'); }
     for (const s of this.showcase) this.scene.remove(s.m.root); this.showcase = [];
     this.clearBattle();
     this.player = new Player(this, this.side);
@@ -367,7 +368,8 @@ class Game {
     const P = this.player; P.x = 0; P.y = 5.4; P.face = -this.side.homeDir;
     this.camGoal = { x: 0, y: 5.6, z: 8.5, lx: 0, ly: 5.4, fov: 38 }; Object.assign(this.cam, { ...this.camGoal, z: 7 });
     P.doAct('reveal', [{ t: .45, fn: () => { this.burstSide(P.x, P.y, 1.6); this.shake(.25); } }], { dur: 1.7 });
-    this.ui_banner(this.side.youAre, `הצבא של ${this.foe.names} בדרך`);
+    this.ui_banner(this.side.youAre, `הצבא שלך איתך - ${this.foe.names} בדרך!`);
+    this.armyLost = 0; this.reinforce(true);
     this.after(2.1, () => { if (this.state !== 'intro') return; this.state = 'battle'; if (!this.save.help && isPC) this.hint(`תעופה: WASD · התקפה: J · זריקה: K · דאש: Shift · מיוחד: I`, 7); else if (!this.save.help) this.hint('ג׳ויסטיק לעוף · הכפתור הגדול תוקף · הזריקה מכוונת לבד', 7); this.save.help = true; writeSave(this.save); this.nextWave(); });
   }
   burstSide(x, y, s = 1) {
@@ -376,16 +378,18 @@ class Game {
   }
   clearBattle() {
     for (const e of this.enemies) e.remove(); this.enemies = [];
+    for (const a of this.allies) a.remove(); this.allies = [];
     for (const s of this.shots) s.remove(); this.shots = [];
     for (const o of this.orbs) o.remove(); this.orbs = [];
     if (this.player) { this.player.remove(); this.player = null; }
-    this.timers = []; this.fx.clear(); this.queue = []; this.boss = null; this.lowLoop?.stop(); this.lowLoop = null;
+    this.timers = []; this.fx.clear(); this.queue = []; this.boss = null; this.lowLoop?.stop(); this.lowLoop = null; this.armyPending = new Set();
   }
   nextWave() {
     this.wave++; this.waveDone = false;
     const W = WAVES[this.wave - 1];
     this.queue = []; for (const [role, n] of W.spawn) for (let i = 0; i < n; i++) this.queue.push(role);
-    this.cap = W.cap; this.spawnT = .8; this.waveDef = W;
+    this.cap = W.cap - (this.lowEnd ? 2 : 0); this.spawnT = .8; this.waveDef = W;
+    if (this.wave > 1) this.reinforce(false);
     this.camGoal = { x: 0, y: 6, z: 15.5, lx: 0, ly: 5.9, fov: 38 };
     this.sfx('wave_start', null, null, { vol: .8 });
     if (W.rival) { this.ui_banner('האלוף מגיע!', `${this.foe.roles.rival.name} - הלוחם הכי חזק של ${this.foe.names}`); this.after(.5, () => this.sfx('rival_appear')); }
@@ -396,7 +400,7 @@ class Game {
   bossIntro() {
     const name = this.foe.roles.boss.name;
     this.ui_banner(name, 'הקרב האחרון');
-    this.music('music_boss'); this.queue = [];
+    this.music('music_boss'); this.queue = this.queue.filter(r => r !== 'boss'); this.spawnT = 3.2; // escorts follow the boss in
     const from = -this.side.homeDir;
     const b = this.spawn('boss', { x: from * (ARENA.x1 + 6), y: 7, instant: false });
     this.boss = b; b.spawning = 2.4; b.vx = -from * 5;
@@ -404,6 +408,47 @@ class Game {
     this.camGoal = { x: from * 5, y: 6.5, z: 13, lx: from * 6, ly: 6.4, fov: 38 };
     this.after(1.1, () => { this.sfx(this.foe.bossRoar, b.x, b.y, { vol: 1 }); this.shake(.5); b.doAct('enrage', [], { dur: 1.3 }); });
     this.after(2.6, () => { this.camGoal = { x: 0, y: 5.8, z: 15.5, lx: 0, ly: 5.8, fov: 38 }; });
+  }
+  /** how many soldiers fly with you this wave (phones with few cores get a smaller army) */
+  armySize() { return [6, 6, 7, 7, 8, 8][Math.max(0, this.wave - 1)] + (this.player?.up.army || 0) * 2 - (this.lowEnd ? 2 : 0); }
+  /** fill your army back up to its size; the first time they fly in behind you during the reveal */
+  reinforce(first) {
+    const ROLES = ['small', 'heavy', 'caster', 'small', 'charger', 'diver', 'small', 'heavy', 'charger', 'diver', 'small', 'caster'];
+    const alive = this.allies.filter(a => !a.dead);
+    this.armyPending = this.armyPending || new Set(); // soldiers already on their way count too
+    const used = new Set([...alive.map(a => a.slot), ...this.armyPending]);
+    const n = Math.max(0, this.armySize() - alive.length - this.armyPending.size);
+    if (!n) return;
+    let slot = 0;
+    for (let i = 0; i < n; i++) {
+      while (used.has(slot)) slot++;
+      used.add(slot); this.armyPending.add(slot);
+      const s = slot, role = ROLES[s % ROLES.length];
+      this.after(first ? .25 + i * .12 : i * .35, () => {
+        this.armyPending.delete(s);
+        if (!this.player || (this.state !== 'battle' && this.state !== 'intro')) return;
+        const a = new Enemy(this, this.side, role, { team: 'ally', slot: s, y: clamp(this.player.y + rnd(-3, 3), ARENA.y0 + .5, ARENA.y1 - .5) });
+        a.m.fit.userData.s0 = a.m.fit.scale.x; a.vx = -this.side.homeDir * 9;
+        this.allies.push(a);
+      });
+    }
+    if (!first) { this.pop(this.player.x, this.player.y + 1.6, `+${n} לוחמים`, 'heal'); this.sfx('rival_appear', null, null, { vol: .35 }); }
+  }
+  hurtAlly(a, dmg, fx, fy) {
+    if (!a || a.dead || a.inv > 0 || this.state === 'ending' || this.state === 'intro') return;
+    let d = Math.round(dmg);
+    if (a.shield > 0) { const s = Math.min(a.shield, d); a.shield -= s; d -= s; this.fx.burst(a.x, a.y, 'block', 6); if (d <= 0) return; }
+    a.hp -= d; a.setFlash(); a.inv = .2;
+    const dx = a.x - fx, dy = a.y - fy, l = Math.hypot(dx, dy) || 1, km = { small: 1, caster: 1, diver: .9, charger: .6, heavy: .3 }[a.role] ?? 1;
+    a.kx += dx / l * 5 * km; a.ky += dy / l * 3 * km;
+    if (!a.act && km >= .9 && a.hp > 0) a.doAct('hit', [], { dur: .25 });
+    this.fx.burst(a.x, a.y, 'hit', 4, .6);
+    this.sfx(this.side.hurtSfx, a.x, a.y, { vol: .35, gap: .1 });
+    if (a.hp <= 0) {
+      a.dead = true; a.deadT = 0; a.lunging = false; a.act = null; a.play('die', { once: true, fade: .08 });
+      if (this.side.key === 'angel') { this.fx.puff(a.x, a.y, 'light', 10); this.fx.feathers(a.x, a.y, 8); } else { this.fx.puff(a.x, a.y, 'smoke', 10); this.fx.embers(a.x, a.y, 10); }
+      this.sfx(this.side.dieSfx, a.x, a.y, { vol: .5 }); this.armyLost++;
+    }
   }
   spawn(role, o = {}) {
     const hpMul = o.hpMul || 1;
@@ -457,15 +502,17 @@ class Game {
     if (e.dead || e.inv > 0) return;
     let d = Math.round(dmg);
     if (e.shield > 0) { const a = Math.min(e.shield, d); e.shield -= a; d -= a; this.fx.burst(e.x, e.y, 'block', 8); this.sfx('shield_block', e.x, e.y, { vol: .6 }); if (d <= 0) return; }
+    if (o.ally && e.role === 'boss') d = Math.max(1, Math.round(d * .4));
+    if (o.ally && e.role === 'rival') d = Math.max(1, Math.round(d * .6));
     e.hp -= d; e.setFlash(); e.hitCount++;
     const km = { small: 1, caster: 1, diver: .9, charger: .6, heavy: .3, rival: .5, boss: .06 }[e.role] ?? 1;
     e.kx += kx * km; e.ky += ky * km;
     if (o.melee && km >= .9) e.stun = Math.max(e.stun, .18);
     if (o.melee && e.role !== 'boss' && e.role !== 'heavy' && !e.act && e.hp > 0) e.doAct('hit', [], { dur: .28 });
-    const P = this.player; P.special = Math.min(1, P.special + d / 240 * (1 + P.up.special * .5));
-    this.pop(e.x, e.y + e.r + .4, d, d >= 18 ? 'crit' : '');
-    this.fx.burst(e.x, e.y, 'hit', 6, .8);
-    this.sfx(this.foe.hurtSfx, e.x, e.y, { vol: .55, gap: .06 });
+    const P = this.player;
+    if (!o.ally) { P.special = Math.min(1, P.special + d / 240 * (1 + P.up.special * .5)); this.pop(e.x, e.y + e.r + .4, d, d >= 18 ? 'crit' : ''); }
+    this.fx.burst(e.x, e.y, 'hit', o.ally ? 4 : 6, .8);
+    this.sfx(this.foe.hurtSfx, e.x, e.y, { vol: o.ally ? .35 : .55, gap: o.ally ? .12 : .06 });
     if (e.hp <= 0) this.killEnemy(e);
   }
   killEnemy(e) {
@@ -485,7 +532,7 @@ class Game {
   bossDown(e) {
     this.state = 'ending'; this.slowmo(2.2, .3); this.shake(.8);
     for (const o of this.enemies) if (o !== e && !o.dead) this.killEnemy(o);
-    for (const s of this.shots) s.remove(); this.shots = [];
+    for (const s of this.shots) s.kill = true; // removed by the shots loop (this can run inside it)
     for (let i = 0; i < 6; i++) this.after(i * .25, () => { this.fx.burst(e.x + rnd(-2, 2), e.y + rnd(-2, 2), this.foe.key === 'angel' ? 'light' : 'fire', 24, 1.6); this.shake(.3); });
     this.sfx('boss_die', e.x, e.y, { vol: 1 });
     $('bossBar').classList.add('hidden');
@@ -520,8 +567,7 @@ class Game {
   playerNova(P) {
     const R = 8.5, dmg = 48 * P.dmgMul;
     for (const e of this.enemies) if (!e.dead && Math.hypot(e.x - P.x, e.y - P.y) < R + e.r) this.hurtEnemy(e, e.role === 'boss' ? dmg * .8 : dmg, Math.sign(e.x - P.x) * 16, 4);
-    for (const s of this.shots) if (s.from === 'enemy' && Math.hypot(s.x - P.x, s.y - P.y) < R) s.life = 0;
-    this.shots = this.shots.filter(s => { if (s.life <= 0) { s.remove(); return false; } return true; });
+    for (const s of this.shots) if (s.from === 'enemy' && Math.hypot(s.x - P.x, s.y - P.y) < R) s.kill = true;
     if (this.side.key === 'angel') { this.fx.rays(P.x, P.y, 16, R, .8, C.goldW); this.fx.ring(P.x, P.y, .5, R, .6, C.goldW, .9); this.fx.burst(P.x, P.y, 'light', 50, 2); this.fx.feathers(P.x, P.y, 24, 2); }
     else { this.fx.ring(P.x, P.y, .5, R, .6, C.fire, .95); this.fx.ring(P.x, P.y, .3, R * .7, .5, C.fireHot, .7); this.fx.burst(P.x, P.y, 'fire', 60, 2.2); this.fx.embers(P.x, P.y, 50, 3); }
     this.sfx(this.side.specialSfx, P.x, P.y, { vol: 1 }); this.audio.duckMusic(.5, 1);
@@ -530,7 +576,7 @@ class Game {
   giveShield(e, angel) {
     e.shield = 30; e.shieldT = 6;
     if (!e.shieldMesh) {
-      e.shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(e.r * 1.25 + .35, 32, 20), shieldMaterial(angel ? 0xffd27a : 0xff6a2a));
+      e.shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(e.r * 1.25 + .35, 32, 20), shieldMaterial(angel ? 0xffd27a : 0xff6a2a, e.isAlly ? .45 : 1));
       e.shieldMesh.renderOrder = 6; this.scene.add(e.shieldMesh);
     }
     this.fx.burst(e.x, e.y, angel ? 'light' : 'fire', 10, .7);
@@ -551,9 +597,9 @@ class Game {
     this.camGoal = { x: this.player.x, y: this.player.y + .3, z: 8, lx: this.player.x, ly: this.player.y, fov: 38 };
     const other = SIDES[this.side.enemy];
     const o = this.overlay(`${this.portraitURL ? `<img class="endpic" src="${this.portraitURL}" alt="">` : ''}
-      <h2>${this.side.names} ניצחו!</h2>
+      <h2>${this.side.names} ניצחו!</h2>${DEDICATION ? `<div class="dedicEnd">${DEDICATION} ❤</div>` : ''}
       <p>${key === 'angel' ? 'מלך השדים נפל והשמיים בטוחים. כל הכבוד, מלאך!' : 'המלאך הגדול הובס והאש שולטת בשמיים. כל הכבוד, שד!'}</p>
-      <div class="stats"><div><b>${fmtTime(sec)}</b><span>${newBest ? 'שיא חדש!' : 'זמן'}</span></div><div><b>${this.kills}</b><span>אויבים</span></div><div><b>${this.save.wins[key]}</b><span>ניצחונות כ${this.side.name}</span></div></div>
+      <div class="stats"><div><b>${fmtTime(sec)}</b><span>${newBest ? 'שיא חדש!' : 'זמן'}</span></div><div><b>${this.kills}</b><span>אויבים</span></div><div><b>${this.allies.filter(a => !a.dead).length}</b><span>לוחמים שרדו</span></div><div><b>${this.save.wins[key]}</b><span>ניצחונות כ${this.side.name}</span></div></div>
       <div class="row"><button class="big side" id="eAgain">עוד קרב</button><button class="big ${key === 'angel' ? 'ember' : ''}" id="eOther">לשחק כ${other.name}</button><button class="big sec" id="eScan">סריקה חדשה</button></div>`);
     this.endButtons(o);
   }
@@ -574,9 +620,11 @@ class Game {
   retryWave() {
     const w = this.wave, up = { ...this.player.up }, maxHp = this.player.maxHp;
     for (const e of this.enemies) e.remove(); this.enemies = []; for (const s of this.shots) s.remove(); this.shots = []; for (const o of this.orbs) o.remove(); this.orbs = [];
-    this.timers = []; this.fx.clear(); this.boss = null; $('bossBar').classList.add('hidden');
+    this.timers = []; this.fx.clear(); this.boss = null; this.armyPending = new Set(); $('bossBar').classList.add('hidden');
     this.player.remove(); this.player = new Player(this, this.side); this.player.up = up; this.player.maxHp = this.player.hp = maxHp;
+    for (const a of this.allies) a.remove(); this.allies = [];
     this.player.inv = 2; this.wave = w - 1; this.waveDone = true; this.queue = []; this.state = 'battle';
+    this.wave = w; this.reinforce(true); this.wave = w - 1;
     this.music(this.side.music); this.burstSide(this.player.x, this.player.y, 1);
     this.after(.8, () => this.nextWave());
   }
@@ -606,6 +654,8 @@ class Game {
     $('waveN').textContent = `גל ${Math.max(1, this.wave)}/6`;
     const left = this.enemies.filter(e => !e.dead).length + (this.queue?.length || 0);
     $('waveLeft').textContent = this.wave ? (this.waveDef?.boss ? this.foe.roles.boss.name : `נשארו ${left} ${this.foe.names.replace('ה', '')}`) : '';
+    const army = this.allies.filter(a => !a.dead).length;
+    if (army !== this._armyShown) { this._armyShown = army; $('armyN').textContent = `הצבא שלך: ${army}`; $('armyN').classList.toggle('few', army <= 2); }
     if (this.boss) $('bossBar').querySelector('i').style.transform = `scaleX(${clamp(this.boss.hp / this.boss.maxHp, 0, 1)})`;
     $('lowv').style.opacity = P.hp / P.maxHp < .28 && !P.dead ? 1 : 0;
     const low = P.hp / P.maxHp < .28 && !P.dead && this.state === 'battle';
@@ -637,6 +687,7 @@ class Game {
       const live = this.state === 'battle' || this.state === 'ending';
       this.player.update(dt, live && this.state === 'battle' ? inp : { x: 0, y: 0 });
       for (let i = this.enemies.length - 1; i >= 0; i--) { const e = this.enemies[i]; if (!e.update(dt)) { e.remove(); this.enemies.splice(i, 1); if (e === this.boss) this.boss = null; } }
+      for (let i = this.allies.length - 1; i >= 0; i--) { const a = this.allies[i]; if (!a.update(dt)) { a.remove(); this.allies.splice(i, 1); } }
       for (let i = this.shots.length - 1; i >= 0; i--) if (!this.shots[i].update(dt)) { this.shots[i].remove(); this.shots.splice(i, 1); }
       for (let i = this.orbs.length - 1; i >= 0; i--) if (!this.orbs[i].update(dt)) { this.orbs[i].remove(); this.orbs.splice(i, 1); }
       this.waveUpdate(dt);
@@ -670,9 +721,9 @@ class Game {
 }
 
 /** a soap-bubble shield: clear in the middle, glowing at the rim, with slow ripples */
-function shieldMaterial(color) {
+function shieldMaterial(color, strength = 1) {
   return new THREE.ShaderMaterial({
-    uniforms: { c: { value: new THREE.Color(color) }, t: { value: 0 } },
+    uniforms: { c: { value: new THREE.Color(color).multiplyScalar(strength) }, t: { value: 0 } },
     vertexShader: `varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vec4 mv = modelViewMatrix * vec4(position,1.); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); vP = position; gl_Position = projectionMatrix * mv; }`,
     fragmentShader: `uniform vec3 c; uniform float t; varying vec3 vN; varying vec3 vV; varying vec3 vP;
       void main(){ float f = pow(1. - abs(dot(normalize(vN), vV)), 2.6); float rip = .5 + .5 * sin(vP.y * 9. + t * 4.) * sin(vP.x * 7. - t * 3.);

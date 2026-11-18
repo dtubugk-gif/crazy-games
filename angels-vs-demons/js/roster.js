@@ -53,18 +53,19 @@ export const ROLE_STATS = {
   charger: { hp: 55, speed: 5.0, radius: .85, touch: 0, score: 25 },
   caster: { hp: 42, speed: 4.4, radius: .7, touch: 0, score: 25 },
   diver: { hp: 34, speed: 7.0, radius: .7, touch: 0, score: 20 },
-  rival: { hp: 300, speed: 7.6, radius: .75, touch: 0, score: 150 },
-  boss: { hp: 1100, speed: 2.6, radius: 2.3, touch: 14, score: 500 },
+  rival: { hp: 420, speed: 7.6, radius: .75, touch: 0, score: 150 },
+  boss: { hp: 1500, speed: 2.6, radius: 2.3, touch: 14, score: 500 },
 };
 
 // 6 waves; each entry = [role, count]; `cap` = most enemies alive at once
+// 6 waves against a whole enemy army (your own army fights with you); each entry = [role, count]; cap = most alive at once
 export const WAVES = [
-  { n: 1, title: 'הגל הראשון', spawn: [['small', 5]], cap: 3 },
-  { n: 2, title: 'הם מתקרבים', spawn: [['small', 3], ['charger', 2], ['small', 3]], cap: 4 },
-  { n: 3, title: 'צבא שלם', spawn: [['small', 2], ['diver', 2], ['heavy', 1], ['caster', 1], ['small', 3], ['charger', 1]], cap: 5 },
-  { n: 4, title: 'המתקפה הגדולה', spawn: [['charger', 2], ['heavy', 1], ['diver', 2], ['caster', 1], ['small', 3], ['heavy', 1], ['diver', 1], ['small', 2]], cap: 6 },
-  { n: 5, title: 'האלוף', spawn: [['rival', 1], ['small', 2], ['caster', 1], ['small', 2]], cap: 3, rival: true },
-  { n: 6, title: 'הקרב האחרון', spawn: [['boss', 1]], cap: 1, boss: true },
+  { n: 1, title: 'הגל הראשון', spawn: [['small', 6], ['charger', 1], ['small', 3]], cap: 6 },
+  { n: 2, title: 'הם מתקרבים', spawn: [['small', 4], ['charger', 3], ['diver', 2], ['small', 4], ['heavy', 1]], cap: 7 },
+  { n: 3, title: 'צבא שלם', spawn: [['small', 4], ['diver', 3], ['heavy', 2], ['caster', 2], ['small', 4], ['charger', 3]], cap: 8 },
+  { n: 4, title: 'המתקפה הגדולה', spawn: [['charger', 3], ['heavy', 2], ['diver', 3], ['caster', 2], ['small', 6], ['heavy', 2], ['diver', 2], ['small', 4]], cap: 9 },
+  { n: 5, title: 'האלוף', spawn: [['rival', 1], ['small', 4], ['caster', 2], ['heavy', 2], ['charger', 2], ['small', 4]], cap: 8, rival: true },
+  { n: 6, title: 'הקרב האחרון', spawn: [['boss', 1], ['small', 3], ['heavy', 1]], cap: 6, boss: true },
 ];
 
 export const UPGRADES = [
@@ -76,6 +77,7 @@ export const UPGRADES = [
   { id: 'rapid', icon: 'iBolt', t: 'זריקה מהירה', d: 'זריקות מהירות יותר ב-30%', max: 2 },
   { id: 'heal', icon: 'iOrb', t: 'ריפוי מלא', d: 'כל החיים חוזרים עכשיו', max: 9 },
   { id: 'vamp', icon: 'iDrop', t: 'כוח החיים', d: 'כל אויב שנופל מחזיר 4 חיים', max: 2 },
+  { id: 'army', icon: 'iWing', t: 'צבא גדול', d: 'עוד 2 לוחמים מצטרפים לצבא שלך בכל גל', max: 2 },
 ];
 
 // owner-supplied Sketchfab models (CC-BY-4.0): shown in the credits screen

@@ -66,7 +66,8 @@ h1,h2,h3{font-family:var(--display); margin:0; font-weight:900}
 #logo .vs{font:800 .34em var(--ui); color:var(--ink2); background:var(--panel2); border-radius:50%; width:2.2em; height:2.2em; display:grid; place-items:center;
   box-shadow:0 0 0 2px var(--edge); -webkit-text-stroke:0}
 #logo p{margin:10px 0 0; font:500 clamp(14px,2.2vw,18px) var(--ui); color:var(--ink); text-shadow:0 2px 6px rgba(0,0,0,.8)}
-#dedic{margin-top:8px; font:700 14px var(--ui); color:#ffe0b8; text-shadow:0 2px 6px #000}
+#dedic{display:inline-block; margin-top:10px; padding:6px 18px 7px; border-radius:999px; font:800 15px var(--ui); color:#fff4dc; text-shadow:0 1px 2px rgba(0,0,0,.5); background:linear-gradient(90deg,#b9832a,#c8372b 50%,#8e2a10); box-shadow:0 0 0 1.5px #2a1d12, 0 0 0 3px rgba(255,220,150,.55), 0 6px 14px rgba(0,0,0,.45)}
+.dedicEnd{font:700 14px var(--ui); color:#ffd9a8; margin-top:4px}
 #loadwrap{width:min(340px,60vw); text-align:center}
 #loadtxt{font:500 13px var(--ui); color:var(--ink2); margin-bottom:6px; text-shadow:0 1px 4px #000}
 #loadbar{height:8px; border-radius:6px; background:rgba(0,0,0,.5); box-shadow:0 0 0 1.5px var(--edge); overflow:hidden}
@@ -156,6 +157,8 @@ h1,h2,h3{font-family:var(--display); margin:0; font-weight:900}
 #wave{margin-inline-start:auto; padding:8px 16px; text-align:center; min-width:120px}
 #wave b{display:block; font:900 20px/1 var(--display); color:var(--side2)}
 #wave span{font:500 12px var(--ui); color:var(--ink2)}
+#wave em{display:block; font:700 12px var(--ui); font-style:normal; color:#b9e39a; margin-top:2px}
+#wave em.few{color:#ff9a7a}
 #bPause{pointer-events:auto}
 #bossBar{position:absolute; top:calc(70px + var(--st)); left:50%; transform:translateX(-50%); width:min(520px,52vw); text-align:center}
 #bossBar span{font:900 17px var(--display); color:#fff0d0; text-shadow:0 2px 6px #000; display:block; margin-bottom:4px}
@@ -262,7 +265,7 @@ body.angel #bossBar .meter i{background:linear-gradient(180deg,#f08a52,#8e2a10)}
         <div class="meter" id="spM" aria-label="כוח מיוחד"><i></i></div>
       </div>
     </div>
-    <div id="wave" class="panel"><b id="waveN">גל 1/6</b><span id="waveLeft"></span></div>
+    <div id="wave" class="panel"><b id="waveN">גל 1/6</b><span id="waveLeft"></span><em id="armyN"></em></div>
     <button class="iconBtn" id="bPause" aria-label="הפסקה"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="5" height="16" rx="2" fill="currentColor"/><rect x="14" y="4" width="5" height="16" rx="2" fill="currentColor"/></svg></button>
   </div>
   <div id="bossBar" class="hidden"><span id="bossName"></span><div class="meter"><i></i></div></div>
@@ -369,6 +372,6 @@ body.angel #bossBar .meter i{background:linear-gradient(180deg,#f08a52,#8e2a10)}
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
 } }
 </script>
-<script type="module" src="js/game.js?v=1"></script>
+<script type="module" src="js/game.js?v=3"></script>
 </body>
 </html>

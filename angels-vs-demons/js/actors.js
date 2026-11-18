@@ -1,10 +1,10 @@
 // Actors: the player (angel or demon hero), the 6 enemy roles of each side with their own AI, projectiles, heal orbs.
 // Everything lives on the 2D plane z = 0; models turn ~60° toward the way they face so wings and weapons read.
 import * as THREE from 'three';
-import { Assets, Anim, node, ownMaterials } from './assets.js';
-import { HEIGHT, ROLE_STATS } from './roster.js';
-import { ARENA } from './world.js';
-import { C } from './fx.js';
+import { Assets, Anim, node, ownMaterials } from './assets.js?v=3';
+import { HEIGHT, ROLE_STATS } from './roster.js?v=3';
+import { ARENA } from './world.js?v=3';
+import { C } from './fx.js?v=3';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -12,6 +12,7 @@ const TURN = 1.02; // radians the model turns toward its facing (3/4 view)
 // bodies are drawn bigger than life so they read on a phone; melee reaches and hit radii scale with them
 export const DISPLAY = { player: 1.55, rival: 1.55, small: 1.6, heavy: 1.4, charger: 1.45, caster: 1.5, diver: 1.5, boss: 1.02 };
 const SC = 1.3;
+export const ALLY_DMG = .7; // your army hits a bit softer than you do
 const FALLBACK = {
   fly: ['idle'], attack1: ['attack'], attack2: ['attack1', 'attack'], attack3: ['attack2', 'attack1', 'attack'],
   attack: ['attack1', 'cast'], cast: ['attack', 'attack1'], dash: ['fly'], special: ['cast', 'attack3', 'attack'],
@@ -232,13 +233,49 @@ export class Enemy extends Actor {
     this.cd = { a: rnd(1.2, 2.4), b: rnd(3, 5), c: rnd(6, 9), d: rnd(8, 12) };
     this.state = 'move'; this.stT = 0; this.shield = 0; this.shieldT = 0; this.hitCount = 0; this.hitWin = 0;
     this.phase = 1; this.touchCd = 0; this.contactDone = false;
-    const from = -g.side.homeDir; // enemies come from their own side
+    this.team = opts.team || 'foe'; this.isAlly = this.team === 'ally'; this.shotFrom = this.isAlly ? 'ally' : 'enemy';
+    this.slot = opts.slot ?? 0; this.tgt = null; this.retarget = 0;
+    const from = this.isAlly ? g.side.homeDir : -g.side.homeDir; // each army flies in from its own world
     this.x = opts.x ?? from * (ARENA.x1 + 4); this.y = opts.y ?? rnd(2.5, 9.5); this.face = -from;
     this.spawning = opts.instant ? 0 : .6; // fly-in grace
-    this.hpBar = makeBar(g, role === 'boss' ? 0 : this.m.height);
+    this.hpBar = makeBar(g, role === 'boss' ? 0 : this.m.height, this.isAlly);
     if (role === 'boss') this.hpBar.root.visible = false;
   }
-  get p() { return this.g.player; }
+  /** who this unit fights right now: the enemy army goes for you or the nearest soldier of your army, your army for the nearest foe */
+  get p() { return this.tgt || this.g.player; }
+  foes() { const g = this.g; return this.isAlly ? g.enemies : [g.player, ...g.allies]; }
+  pickTarget() {
+    let best = null, bd = 1e9;
+    for (const o of this.foes()) {
+      if (!o || o.dead || o.spawning > .3) continue;
+      let d = Math.hypot(o.x - this.x, o.y - this.y);
+      if (o.isPlayer) d *= (this.role === 'rival' || this.role === 'boss') ? .35 : .6; // you draw the most attention
+      if (o.role === 'boss') d *= 1.3;
+      if (d < bd) { bd = d; best = o; }
+    }
+    this.tgt = best;
+  }
+  /** damage one opponent: you, a soldier of your army, or (for your army) an enemy */
+  hit(o, dmg, fx, fy, dot) {
+    const g = this.g; if (!o || o.dead) return;
+    if (o.isPlayer) g.hurtPlayer(dmg, fx, fy, dot);
+    else if (o.isAlly) g.hurtAlly(o, this.role === 'boss' ? dmg * .5 : dmg, fx, fy); // the boss is your fight: it hits soldiers softer
+    else g.hurtEnemy(o, dmg * ALLY_DMG, Math.sign(o.x - fx) * 4, 1, { ally: true, melee: !dot });
+  }
+  /** hit every opponent within R of (cx, cy); returns the set that was hit */
+  strike(cx, cy, R, dmg, dot, skip) {
+    const hitSet = new Set();
+    for (const o of this.foes()) if (o && !o.dead && !(skip && skip.has(o)) && Math.hypot(o.x - cx, o.y - cy) < R + o.r) { this.hit(o, dmg, this.x, this.y, dot); hitSet.add(o); }
+    return hitSet;
+  }
+  /** between fights your soldiers fly in formation behind you, facing the enemy side */
+  formation(dt) {
+    const g = this.g, P = g.player; if (!P) return;
+    const k = this.slot, col = k % 3, row = Math.floor(k / 3);
+    const tx = clamp(P.x + g.side.homeDir * (2.6 + row * 2.3), ARENA.x0 + 1, ARENA.x1 - 1), ty = clamp(P.y + (col - 1) * 2 + (row % 2) * .8, ARENA.y0 + .6, ARENA.y1 - .5);
+    this.steer(tx, ty, this.sp * 1.3, 2.6, dt);
+    this.face = -g.side.homeDir; this.moveAnim();
+  }
   update(dt) {
     const g = this.g;
     if (this.dead) {
@@ -253,11 +290,14 @@ export class Enemy extends Actor {
     for (const k in this.cd) this.cd[k] -= dt * (this.phase === 2 ? 1.4 : 1);
     if (this.shieldT > 0) { this.shieldT -= dt; if (this.shieldT <= 0) this.shield = 0; }
     this.tickAct(dt);
-    if (this.stun <= 0 && !this.p.dead) this.think(dt);
+    this.retarget -= dt;
+    if (this.retarget <= 0 || !this.tgt || this.tgt.dead) { this.retarget = rnd(.35, .6); this.pickTarget(); }
+    if (this.stun <= 0 && this.tgt && !this.tgt.dead) this.think(dt);
+    else if (this.stun <= 0 && this.isAlly && !this.act) this.formation(dt);
     else { this.vx *= .9; this.vy *= .9; }
     this.vx += this.kx; this.vy += this.ky; this.kx *= .4; this.ky *= .4;
-    // separation from other enemies
-    for (const o of g.enemies) {
+    // separation from the rest of the same army
+    for (const o of (this.isAlly ? g.allies : g.enemies)) {
       if (o === this || o.dead) continue;
       const dx = this.x - o.x, dy = this.y - o.y, d = Math.hypot(dx, dy), min = this.r + o.r + .3;
       if (d < min && d > .001) { const push = (min - d) * 3; this.vx += dx / d * push; this.vy += dy / d * push; }
@@ -267,11 +307,8 @@ export class Enemy extends Actor {
     if (this.spawning <= 0) { this.x = clamp(this.x, ARENA.x0 - .5 + lim, ARENA.x1 + .5 - lim); }
     this.y = clamp(this.y, ARENA.y0 + (this.role === 'boss' ? 2.4 : 0), ARENA.y1 - (this.role === 'boss' ? 2.8 : 0));
     // contact damage (heavy / boss bodies, chargers and divers while lunging)
-    const p = this.p, d = Math.hypot(p.x - this.x, p.y - this.y);
-    if (d < this.r + p.r) {
-      if (this.lunging && !this.contactDone) { this.contactDone = true; g.hurtPlayer(this.lungeDmg, this.x, this.y); this.onContact?.(); }
-      else if (this.stats.touch && this.touchCd <= 0) { this.touchCd = .9; g.hurtPlayer(this.stats.touch, this.x, this.y); }
-    }
+    if (this.lunging && !this.contactDone) { const h = this.strike(this.x, this.y, this.r * .9, this.lungeDmg); if (h.size) { this.contactDone = true; this.onContact?.(); } }
+    else if (this.stats.touch && this.touchCd <= 0 && this.strike(this.x, this.y, this.r * .9, this.stats.touch).size) this.touchCd = .9;
     // shield bubble
     if (this.shieldMesh) { this.shieldMesh.visible = this.shield > 0; if (this.shield > 0) { this.shieldMesh.position.set(this.x, this.y, 0); this.shieldMesh.material.uniforms.t.value = g.t; } }
     this.updateVisual(dt);
@@ -283,6 +320,7 @@ export class Enemy extends Actor {
     const p = this.p, m = 1.6;
     if (tx > ARENA.x1 - m || tx < ARENA.x0 + m) { const mir = 2 * p.x - tx; tx = (mir > ARENA.x0 + m && mir < ARENA.x1 - m) ? mir : clamp(tx, ARENA.x0 + m, ARENA.x1 - m); }
     ty = clamp(ty, ARENA.y0 + .6, ARENA.y1 - .5);
+    if (this.isAlly) tx = clamp(tx, -7, 7); // your army holds a front line on screen and lets the enemy come in
     const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy);
     const s = Math.min(sp, d * 2.2);
     const vx = d > .01 ? dx / d * s : 0, vy = d > .01 ? dy / d * s : 0;
@@ -306,12 +344,12 @@ export class Enemy extends Actor {
         if (imp && this.spawning <= 0 && Math.random() < dt * .12) g.sfx('imp_cackle', this.x, this.y, { vol: .55, gap: 1.5 });
         if (imp && dist < 2.6 * SC && this.cd.b <= 0 && !this.act) {
           this.cd.b = 2.2;
-          this.doAct('attack', [{ t: .45, fn: () => { if (Math.hypot(p.x - this.x, p.y - this.y) < 2.8 * SC + p.r) { g.hurtPlayer(9, this.x, this.y); g.sfx('claw_hit', this.x, this.y); } else g.sfx('claw_swing', this.x, this.y, { vol: .6 }); } }]);
+          this.doAct('attack', [{ t: .45, fn: () => { if (Math.hypot(p.x - this.x, p.y - this.y) < 2.8 * SC + p.r) { this.hit(p, 9, this.x, this.y); g.sfx('claw_hit', this.x, this.y); } else g.sfx('claw_swing', this.x, this.y, { vol: .6 }); } }]);
           this.vx += Math.sign(dx) * 6;
         } else if (this.cd.a <= 0 && dist < 15 && !this.act && this.spawning <= 0) {
           this.cd.a = rnd(2.1, 3.0);
           const kind = imp ? 'ember' : 'arrow';
-          this.doAct(imp ? 'cast' : 'attack', [{ t: .55, fn: () => { const q = this.point('fx_hand_R'); g.shoot(kind, q.x, q.y, this.aimAt(p.x, p.y, 14), 'enemy', { dmg: 7 }); g.sfx(imp ? 'fireball_cast' : 'arrow_shoot', q.x, q.y, { vol: .55 }); } }]);
+          this.doAct(imp ? 'cast' : 'attack', [{ t: .55, fn: () => { const q = this.point('fx_hand_R'); g.shoot(kind, q.x, q.y, this.aimAt(p.x, p.y, 14), this.shotFrom, { dmg: 7, aim: p }); g.sfx(imp ? 'fireball_cast' : 'arrow_shoot', q.x, q.y, { vol: .55 }); } }]);
         }
         break;
       }
@@ -332,8 +370,8 @@ export class Enemy extends Actor {
             { t: .2, fn: () => g.sfx(brute ? 'claw_swing' : 'sword_swing', this.x, this.y, { vol: .8, rate: .8 }) },
             { t: .5, fn: () => {
               const cx = this.x + this.face * 1.4 * SC;
-              if (Math.hypot(p.x - cx, p.y - this.y) < 2.2 * SC + p.r) { g.hurtPlayer(16, this.x, this.y); g.sfx(brute ? 'club_hit' : 'sword_hit', cx, this.y); }
-              if (brute) { g.fx.ring(cx, this.y, .5, 3.6, .45, C.fire, .7); g.shake(.25); if (Math.hypot(p.x - cx, p.y - this.y) < 3.6 && Math.hypot(p.x - cx, p.y - this.y) > 2.2 + p.r) g.hurtPlayer(8, cx, this.y); }
+              const near = this.strike(cx, this.y, 2.2 * SC, 16); if (near.size) g.sfx(brute ? 'club_hit' : 'sword_hit', cx, this.y);
+              if (brute) { g.fx.ring(cx, this.y, .5, 3.6, .45, C.fire, .7); if (!this.isAlly) g.shake(.25); this.strike(cx, this.y, 3.6, 8, false, near); }
             } },
           ]);
         } else if (dist > 4.5 && dist < 14 && this.cd.c <= 0 && !this.act) {
@@ -355,7 +393,7 @@ export class Enemy extends Actor {
         this.lookAtPlayer();
         if (dist < 2.6 * SC && this.cd.b <= 0 && !this.act) {
           this.cd.b = 2;
-          this.doAct('attack', [{ t: .5, fn: () => { if (Math.hypot(p.x - this.x, p.y - this.y) < 2.6 * SC + p.r) { g.hurtPlayer(12, this.x, this.y); g.sfx(this.def.key === 'angel' ? 'sword_hit' : 'claw_hit', this.x, this.y); } } }]);
+          this.doAct('attack', [{ t: .5, fn: () => { if (Math.hypot(p.x - this.x, p.y - this.y) < 2.6 * SC + p.r) { this.hit(p, 12, this.x, this.y); g.sfx(this.def.key === 'angel' ? 'sword_hit' : 'claw_hit', this.x, this.y); } } }]);
         } else if (this.cd.a <= 0 && dist < 15 && this.spawning <= 0 && !this.act) {
           this.cd.a = rnd(3.2, 4.4); this.state = 'windup'; this.stT = .65; this.tx = p.x; this.ty = p.y;
           this.doAct('charge', [], { dur: .65 });
@@ -369,16 +407,16 @@ export class Enemy extends Actor {
         this.lookAtPlayer();
         const angel = this.def.key === 'angel';
         if (this.cd.c <= 0 && !this.act) {
-          const allies = g.enemies.filter(e => e !== this && !e.dead && e.shield <= 0 && Math.hypot(e.x - this.x, e.y - this.y) < 8);
-          this.cd.c = rnd(7, 9);
+          const allies = (this.isAlly ? g.allies : g.enemies).filter(e => e !== this && !e.dead && e.shield <= 0 && Math.hypot(e.x - this.x, e.y - this.y) < 8);
+          this.cd.c = this.isAlly ? rnd(12, 15) : rnd(7, 9); // your casters bless less often so the screen stays readable
           if (allies.length) {
-            this.doAct('shield', [{ t: .55, fn: () => { for (const a of [this, ...allies].slice(0, 4)) g.giveShield(a, angel); g.sfx('shield_bless', this.x, this.y, { vol: .7 }); } }]);
+            this.doAct('shield', [{ t: .55, fn: () => { for (const a of [this, ...allies].slice(0, this.isAlly ? 3 : 4)) g.giveShield(a, angel); if (this.isAlly && g.player && Math.hypot(g.player.x - this.x, g.player.y - this.y) < 10) g.heal(6); g.sfx('shield_bless', this.x, this.y, { vol: .7 }); } }]);
             break;
           }
         }
         if (this.cd.a <= 0 && dist < 18 && this.spawning <= 0 && !this.act) {
           this.cd.a = rnd(2.8, 3.6);
-          this.doAct('cast', [{ t: .55, fn: () => { const q = this.point('fx_weapon_tip', 1); g.shoot(angel ? 'orb_light' : 'orb_dark', q.x, q.y, Math.atan2(p.y - q.y, p.x - q.x), 'enemy', { dmg: 10 }); g.sfx('orb_cast', q.x, q.y, { vol: .6 }); } }]);
+          this.doAct('cast', [{ t: .55, fn: () => { const q = this.point('fx_weapon_tip', 1); g.shoot(angel ? 'orb_light' : 'orb_dark', q.x, q.y, Math.atan2(p.y - q.y, p.x - q.x), this.shotFrom, { dmg: 10, aim: p }); g.sfx('orb_cast', q.x, q.y, { vol: .6 }); } }]);
         }
         break;
       }
@@ -395,7 +433,7 @@ export class Enemy extends Actor {
             this.state = 'recover'; this.stT = .9; this.lunging = false;
             if (angel) { g.fx.bolt(this.x, this.y + 7, this.x, this.y, .3, 1.4); g.fx.burst(this.x, this.y, 'light', 12); }
             else { g.fx.burst(this.x, this.y, 'stone', 10); g.sfx('stone_hit', this.x, this.y, { vol: .8 }); }
-            if (Math.hypot(p.x - this.x, p.y - this.y) < 1.8 + p.r && !this.contactDone) { this.contactDone = true; g.hurtPlayer(10, this.x, this.y); }
+            if (!this.contactDone && this.strike(this.x, this.y, 1.8, 10).size) this.contactDone = true;
           }
           break;
         }
@@ -433,20 +471,20 @@ export class Enemy extends Actor {
       this.doAct('special', [{ t: .85, fn: () => {
         g.fx.ring(this.x, this.y, .5, 5.8, .5, angel ? C.goldW : C.fire, .9);
         if (angel) g.fx.rays(this.x, this.y, 10, 6, .45, C.goldW); else g.fx.burst(this.x, this.y, 'fire', 30, 1.6);
-        if (Math.hypot(p.x - this.x, p.y - this.y) < 5.5 + p.r) g.hurtPlayer(22, this.x, this.y);
+        this.strike(this.x, this.y, 5.5, 22);
         g.shake(.4);
       } }], { dur: 1.05, end: () => { this.state = 'move'; } });
       return;
     }
     if (dist < 2.8 * SC && this.cd.a <= 0 && !this.act) {
       this.cd.a = rnd(1.3, 1.9);
-      const swing = (n) => ({ t: .45, fn: () => { g.sfx(angel ? 'sword_swing' : 'trident_swing', this.x, this.y, { vol: .7 }); if (Math.hypot(p.x - (this.x + this.face * 1.2 * SC), p.y - this.y) < 2 * SC + p.r) { g.hurtPlayer(n === 3 ? 11 : 7, this.x, this.y); g.sfx(angel ? 'sword_hit' : 'trident_hit', p.x, p.y); } } });
+      const swing = (n) => ({ t: .45, fn: () => { g.sfx(angel ? 'sword_swing' : 'trident_swing', this.x, this.y, { vol: .7 }); if (this.strike(this.x + this.face * 1.2 * SC, this.y, 2 * SC, n === 3 ? 11 : 7).size) g.sfx(angel ? 'sword_hit' : 'trident_hit', p.x, p.y); } });
       this.doAct('attack1', [swing(1)], { speed: 1.1, end: () => { if (!this.dead && Math.hypot(this.p.x - this.x, this.p.y - this.y) < 3.2 * SC) this.doAct('attack2', [swing(2)], { speed: 1.1, end: () => { if (!this.dead && Math.random() < .6) this.doAct('attack3', [swing(3)], { speed: 1.05 }); } }); } });
       return;
     }
     if (this.cd.b <= 0 && dist > 3.5 && !this.act) {
       this.cd.b = rnd(1.4, 2);
-      this.doAct('cast', [{ t: .45, fn: () => { const q = this.point('fx_hand_R', .2); g.shoot(angel ? 'spear' : 'fire', q.x, q.y, this.aimAt(p.x, p.y, 18), 'enemy', { dmg: 8 }); g.sfx(angel ? 'spear_throw' : 'fireball_cast', q.x, q.y, { vol: .7 }); } }], { speed: 1.3 });
+      this.doAct('cast', [{ t: .45, fn: () => { const q = this.point('fx_hand_R', .2); g.shoot(angel ? 'spear' : 'fire', q.x, q.y, this.aimAt(p.x, p.y, 18), this.shotFrom, { dmg: 8, aim: p }); g.sfx(angel ? 'spear_throw' : 'fireball_cast', q.x, q.y, { vol: .7 }); } }], { speed: 1.3 });
     }
   }
   thinkBoss(dt, dist, dx, dy, side) {
@@ -458,8 +496,9 @@ export class Enemy extends Actor {
     if (this.act) return;
     if (this.phase === 1 && this.hp < this.maxHp * .5) {
       this.phase = 2; this.state = 'enrage'; this.inv = 1.6;
-      g.sfx(this.def.bossRoar, this.x, this.y, { vol: 1 }); g.shake(.6); g.ui.banner(angel ? 'המלאך הגדול זועם!' : 'מלך השדים זועם!', 'הוא מהיר וחזק יותר');
-      this.doAct('enrage', [{ t: .5, fn: () => { g.fx.ring(this.x, this.y, 1, 9, .7, angel ? C.goldW : C.fire, .9); if (Math.hypot(p.x - this.x, p.y - this.y) < 7) { g.hurtPlayer(10, this.x, this.y); } } }], { dur: 1.5, end: () => { this.state = 'move'; } });
+      g.sfx(this.def.bossRoar, this.x, this.y, { vol: 1 }); g.shake(.6); g.ui.banner(angel ? 'המלאך הגדול זועם!' : 'מלך השדים זועם!', 'תגבורת לצבא שלך בדרך!');
+      g.after(1.6, () => g.reinforce(false)); // your army is refilled for the last half of the fight
+      this.doAct('enrage', [{ t: .5, fn: () => { g.fx.ring(this.x, this.y, 1, 9, .7, angel ? C.goldW : C.fire, .9); this.strike(this.x, this.y, 7, 10); } }], { dur: 1.5, end: () => { this.state = 'move'; } });
       return;
     }
     if (dist < 5.4 && this.cd.a <= 0) {
@@ -470,7 +509,7 @@ export class Enemy extends Actor {
         { t: .45, fn: () => {
           const cx = this.x + this.face * 3;
           g.fx.ring(cx, this.y, .5, 3.6, .35, angel ? C.goldW : C.fire, .8); g.shake(.3);
-          if (Math.hypot(p.x - cx, p.y - this.y) < 3.4 + p.r) { g.hurtPlayer(20, this.x, this.y); }
+          this.strike(cx, this.y, 3.4, 20);
         } },
       ], { dur: 1.2 });
       return;
@@ -497,7 +536,7 @@ export class Enemy extends Actor {
       this.cd.c = this.phase === 2 ? 11 : 14;
       this.doAct('summon', [{ t: .5, fn: () => {
         g.sfx(this.def.bossRoar, this.x, this.y, { vol: .7, rate: 1.1 });
-        const roles = this.phase === 2 ? ['small', 'small', 'diver'] : ['small', 'small'];
+        const roles = this.phase === 2 ? ['small', 'small', 'small', 'diver', 'charger'] : ['small', 'small', 'small', 'diver'];
         for (const r of roles) g.spawn(r, { x: this.x + rnd(-2, 2), y: this.y + rnd(-2, 2), instant: true, hpMul: .8, summoned: true });
         g.fx.burst(this.x, this.y, angel ? 'light' : 'fire', 24, 1.4);
       } }], { dur: 1.2 });
@@ -516,9 +555,15 @@ export class Enemy extends Actor {
     }
     if (Math.random() < .5) g.fx.smoke.emit({ x: m.x + Math.cos(this.breathAng) * 4, y: m.y + Math.sin(this.breathAng) * 4, vx: Math.cos(this.breathAng) * 4, vy: 1.5, life: .9, size: 1, size1: 2.6, alpha: .4, color: C.smoke });
     this.breathHit = (this.breathHit || 0) - dt;
-    const dx = p.x - m.x, dy = p.y - m.y, d = Math.hypot(dx, dy);
-    let ang = Math.atan2(dy, dx) - this.breathAng; while (ang > Math.PI) ang -= 2 * Math.PI; while (ang < -Math.PI) ang += 2 * Math.PI;
-    if (d < 9 && Math.abs(ang) < .34 && this.breathHit <= 0) { this.breathHit = .22; g.hurtPlayer(5, m.x, m.y, true); }
+    if (this.breathHit <= 0) {
+      this.breathHit = .22;
+      for (const o of this.foes()) {
+        if (!o || o.dead) continue;
+        const dx = o.x - m.x, dy = o.y - m.y, d = Math.hypot(dx, dy);
+        let ang = Math.atan2(dy, dx) - this.breathAng; while (ang > Math.PI) ang -= 2 * Math.PI; while (ang < -Math.PI) ang += 2 * Math.PI;
+        if (d < 9 && Math.abs(ang) < .34) this.hit(o, 5, m.x, m.y, true);
+      }
+    }
     if (this.breathT <= 0) this.state = 'move';
   }
   meteors() {
@@ -534,10 +579,10 @@ export class Enemy extends Actor {
   remove() { super.remove(); this.hpBar.remove(); if (this.shieldMesh) this.g.scene.remove(this.shieldMesh); }
 }
 
-function makeBar(g, h) {
+function makeBar(g, h, ally) {
   const root = new THREE.Group();
   const bg = new THREE.Mesh(new THREE.PlaneGeometry(1.1, .12), new THREE.MeshBasicMaterial({ color: 0x1a1210, transparent: true, opacity: .7, depthTest: false }));
-  const fill = new THREE.Mesh(new THREE.PlaneGeometry(1.04, .07), new THREE.MeshBasicMaterial({ color: 0xe8a33a, depthTest: false, transparent: true }));
+  const fill = new THREE.Mesh(new THREE.PlaneGeometry(1.04, .07), new THREE.MeshBasicMaterial({ color: ally ? 0x8fd16a : 0xe8a33a, depthTest: false, transparent: true }));
   fill.position.z = .01; root.add(bg); root.add(fill); bg.renderOrder = 20; fill.renderOrder = 21;
   root.visible = false; g.scene.add(root);
   const off = h * .62 + .35;
@@ -564,7 +609,7 @@ export class Shot {
   constructor(g, kind, x, y, ang, from, o = {}) {
     const c = SHOTS[kind]; this.c = c; this.g = g; this.kind = kind; this.from = from;
     this.x = x; this.y = y; this.vx = Math.cos(ang) * c.speed; this.vy = Math.sin(ang) * c.speed;
-    this.dmg = o.dmg || 8; this.life = c.life; this.r = c.r * 1.25; this.pierce = c.pierce || 0; this.hitSet = new Set(); this.target = o.target;
+    this.dmg = o.dmg || 8; this.life = c.life; this.r = c.r * 1.25; this.pierce = c.pierce || 0; this.hitSet = new Set(); this.target = o.target; this.aim = o.aim;
     this.obj = new THREE.Group();
     if (c.model && Assets.has(c.model)) { const m = Assets.clone(c.model); m.scale.setScalar(c.scale * 1.35); this.obj.add(m); this.spin = kind.includes('fire') || kind === 'ember' || kind === 'meteor'; this.mesh = m; }
     else {
@@ -586,9 +631,11 @@ export class Shot {
   orient() { if (!this.spin && this.mesh) this.obj.rotation.z = Math.atan2(this.vy, this.vx); }
   update(dt) {
     const g = this.g, c = this.c;
+    if (this.kill) return false;
     this.life -= dt;
-    if (c.homing && this.from === 'enemy' && !g.player.dead) {
-      const want = Math.atan2(g.player.y - this.y, g.player.x - this.x), cur = Math.atan2(this.vy, this.vx);
+    const homeOn = this.aim && !this.aim.dead ? this.aim : (this.from === 'enemy' && !g.player.dead ? g.player : null);
+    if (c.homing && homeOn) {
+      const want = Math.atan2(homeOn.y - this.y, homeOn.x - this.x), cur = Math.atan2(this.vy, this.vx);
       let d = want - cur; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
       const a = cur + clamp(d, -c.homing * dt, c.homing * dt); this.vx = Math.cos(a) * c.speed; this.vy = Math.sin(a) * c.speed;
     }
@@ -600,7 +647,8 @@ export class Shot {
     if (this.life <= 0) { if (c.splash) this.explode(); return false; }
     if (this.x < ARENA.x0 - 8 || this.x > ARENA.x1 + 8 || this.y < -4 || this.y > ARENA.y1 + 9) return false;
     // collisions
-    if (this.from === 'player') {
+    if (this.from !== 'enemy') {
+      const ally = this.from === 'ally';
       for (const e of g.enemies) {
         if (e.dead || e.spawning > .3 || this.hitSet.has(e)) continue;
         if (Math.hypot(e.x - this.x, e.y - this.y) < e.r + this.r) {
@@ -609,19 +657,21 @@ export class Shot {
             g.fx.burst(this.x, this.y, 'block', 12); g.sfx('shield_block', this.x, this.y, { vol: .8 }); e.doAct('block', [], { dur: .35 }); return false;
           }
           this.hitSet.add(e);
-          g.hurtEnemy(e, this.dmg, Math.sign(this.vx) * 3.5, 0, { shot: true });
+          g.hurtEnemy(e, this.dmg * (ally ? ALLY_DMG : 1), Math.sign(this.vx) * 3.5, 0, { shot: true, ally });
           if (c.splash) { this.explode(e); return false; }
           g.fx.burst(this.x, this.y, c.hit, 10, .8); g.sfx(c.sfx, this.x, this.y, { vol: .7 });
           if (this.pierce-- <= 0) return false;
         }
       }
-    } else if (!g.player.dead) {
-      const p = g.player;
-      if (Math.hypot(p.x - this.x, p.y - this.y) < p.r + this.r * .85) {
-        if (c.splash) { this.explode(); return false; }
-        g.hurtPlayer(this.dmg, this.x - this.vx * .05, this.y - this.vy * .05);
-        g.fx.burst(this.x, this.y, c.hit, 10, .8); g.sfx(c.sfx, this.x, this.y, { vol: .7 });
-        return false;
+    } else {
+      for (const p of [g.player, ...g.allies]) {
+        if (!p || p.dead || p.spawning > .3) continue;
+        if (Math.hypot(p.x - this.x, p.y - this.y) < p.r + this.r * .85) {
+          if (c.splash) { this.explode(); return false; }
+          if (p.isPlayer) g.hurtPlayer(this.dmg, this.x - this.vx * .05, this.y - this.vy * .05); else g.hurtAlly(p, this.dmg, this.x, this.y);
+          g.fx.burst(this.x, this.y, c.hit, 10, .8); g.sfx(c.sfx, this.x, this.y, { vol: .7 });
+          return false;
+        }
       }
     }
     return true;
@@ -631,9 +681,12 @@ export class Shot {
     g.fx.burst(this.x, this.y, c.hit, c.big ? 30 : 16, c.big ? 1.7 : 1); g.fx.ring(this.x, this.y, .3, R * 1.2, .35, C.fire, .7);
     g.sfx(c.sfx, this.x, this.y, { vol: c.big ? 1 : .75 });
     if (c.big) g.shake(.3);
-    if (this.from === 'player') {
-      for (const e of g.enemies) if (!e.dead && e !== skip && Math.hypot(e.x - this.x, e.y - this.y) < R + e.r) g.hurtEnemy(e, this.dmg * .6, Math.sign(e.x - this.x) * 4, 1, { shot: true });
-    } else if (Math.hypot(g.player.x - this.x, g.player.y - this.y) < R + g.player.r) g.hurtPlayer(this.dmg, this.x, this.y);
+    if (this.from !== 'enemy') {
+      const ally = this.from === 'ally';
+      for (const e of g.enemies) if (!e.dead && e !== skip && Math.hypot(e.x - this.x, e.y - this.y) < R + e.r) g.hurtEnemy(e, this.dmg * .6 * (ally ? ALLY_DMG : 1), Math.sign(e.x - this.x) * 4, 1, { shot: true, ally });
+    } else {
+      for (const p of [g.player, ...g.allies]) if (p && !p.dead && Math.hypot(p.x - this.x, p.y - this.y) < R + p.r) { if (p.isPlayer) g.hurtPlayer(this.dmg, this.x, this.y); else g.hurtAlly(p, this.dmg, this.x, this.y); }
+    }
   }
   remove() { this.g.scene.remove(this.obj); }
 }
