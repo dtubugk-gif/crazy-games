@@ -1,0 +1,485 @@
+{
+  "sfx": {
+    "angel_die": {
+      "files": [
+        "angel_die_1.ogg",
+        "angel_die_2.ogg"
+      ],
+      "gain": 0.54
+    },
+    "angel_hurt": {
+      "files": [
+        "angel_hurt_1.ogg",
+        "angel_hurt_2.ogg",
+        "angel_hurt_3.ogg"
+      ],
+      "gain": 0.46
+    },
+    "arrow_hit": {
+      "files": [
+        "arrow_hit_1.ogg",
+        "arrow_hit_2.ogg",
+        "arrow_hit_3.ogg"
+      ],
+      "gain": 0.63
+    },
+    "arrow_shoot": {
+      "files": [
+        "arrow_shoot_1.ogg",
+        "arrow_shoot_2.ogg",
+        "arrow_shoot_3.ogg"
+      ],
+      "gain": 0.48
+    },
+    "boss_die": {
+      "files": [
+        "boss_die_1.ogg"
+      ],
+      "gain": 0.43
+    },
+    "boss_roar_angel": {
+      "files": [
+        "boss_roar_angel_1.ogg"
+      ],
+      "gain": 0.5
+    },
+    "boss_roar_demon": {
+      "files": [
+        "boss_roar_demon_1.ogg"
+      ],
+      "gain": 0.49
+    },
+    "brute_roar": {
+      "files": [
+        "brute_roar_1.ogg",
+        "brute_roar_2.ogg"
+      ],
+      "gain": 0.49
+    },
+    "cam_shutter": {
+      "files": [
+        "cam_shutter_1.ogg"
+      ],
+      "gain": 0.64
+    },
+    "charge_windup": {
+      "files": [
+        "charge_windup_1.ogg",
+        "charge_windup_2.ogg"
+      ],
+      "gain": 0.8
+    },
+    "claw_hit": {
+      "files": [
+        "claw_hit_1.ogg",
+        "claw_hit_2.ogg",
+        "claw_hit_3.ogg"
+      ],
+      "gain": 0.48
+    },
+    "claw_swing": {
+      "files": [
+        "claw_swing_1.ogg",
+        "claw_swing_2.ogg",
+        "claw_swing_3.ogg"
+      ],
+      "gain": 0.58
+    },
+    "club_hit": {
+      "files": [
+        "club_hit_1.ogg",
+        "club_hit_2.ogg"
+      ],
+      "gain": 0.44
+    },
+    "countdown_tick": {
+      "files": [
+        "countdown_tick_1.ogg",
+        "countdown_tick_2.ogg"
+      ],
+      "gain": 0.48
+    },
+    "dash": {
+      "files": [
+        "dash_1.ogg",
+        "dash_2.ogg",
+        "dash_3.ogg"
+      ],
+      "gain": 0.43
+    },
+    "defeat": {
+      "files": [
+        "defeat_1.ogg"
+      ],
+      "gain": 0.51
+    },
+    "demon_die": {
+      "files": [
+        "demon_die_1.ogg",
+        "demon_die_2.ogg"
+      ],
+      "gain": 0.56
+    },
+    "demon_hurt": {
+      "files": [
+        "demon_hurt_1.ogg",
+        "demon_hurt_2.ogg",
+        "demon_hurt_3.ogg"
+      ],
+      "gain": 0.46
+    },
+    "fireball_cast": {
+      "files": [
+        "fireball_cast_1.ogg",
+        "fireball_cast_2.ogg",
+        "fireball_cast_3.ogg"
+      ],
+      "gain": 0.51
+    },
+    "fireball_hit": {
+      "files": [
+        "fireball_hit_1.ogg",
+        "fireball_hit_2.ogg",
+        "fireball_hit_3.ogg"
+      ],
+      "gain": 0.49
+    },
+    "gargoyle_screech": {
+      "files": [
+        "gargoyle_screech_1.ogg",
+        "gargoyle_screech_2.ogg"
+      ],
+      "gain": 0.57
+    },
+    "heal_pickup": {
+      "files": [
+        "heal_pickup_1.ogg",
+        "heal_pickup_2.ogg"
+      ],
+      "gain": 0.59
+    },
+    "imp_cackle": {
+      "files": [
+        "imp_cackle_1.ogg",
+        "imp_cackle_2.ogg",
+        "imp_cackle_3.ogg"
+      ],
+      "gain": 0.55
+    },
+    "light_spear_rain": {
+      "files": [
+        "light_spear_rain_1.ogg"
+      ],
+      "gain": 0.59
+    },
+    "lightning_strike": {
+      "files": [
+        "lightning_strike_1.ogg",
+        "lightning_strike_2.ogg"
+      ],
+      "gain": 0.57
+    },
+    "meteor_fall": {
+      "files": [
+        "meteor_fall_1.ogg",
+        "meteor_fall_2.ogg"
+      ],
+      "gain": 0.63
+    },
+    "meteor_impact": {
+      "files": [
+        "meteor_impact_1.ogg",
+        "meteor_impact_2.ogg"
+      ],
+      "gain": 0.46
+    },
+    "orb_cast": {
+      "files": [
+        "orb_cast_1.ogg",
+        "orb_cast_2.ogg"
+      ],
+      "gain": 0.53
+    },
+    "orb_drop": {
+      "files": [
+        "orb_drop_1.ogg",
+        "orb_drop_2.ogg"
+      ],
+      "gain": 0.53
+    },
+    "orb_hit": {
+      "files": [
+        "orb_hit_1.ogg",
+        "orb_hit_2.ogg",
+        "orb_hit_3.ogg"
+      ],
+      "gain": 0.52
+    },
+    "pig_squeal_roar": {
+      "files": [
+        "pig_squeal_roar_1.ogg",
+        "pig_squeal_roar_2.ogg"
+      ],
+      "gain": 0.54
+    },
+    "player_hurt": {
+      "files": [
+        "player_hurt_1.ogg",
+        "player_hurt_2.ogg",
+        "player_hurt_3.ogg"
+      ],
+      "gain": 0.41
+    },
+    "rival_appear": {
+      "files": [
+        "rival_appear_1.ogg"
+      ],
+      "gain": 0.5
+    },
+    "scan_beep": {
+      "files": [
+        "scan_beep_1.ogg",
+        "scan_beep_2.ogg",
+        "scan_beep_3.ogg"
+      ],
+      "gain": 0.47
+    },
+    "scan_sweep": {
+      "files": [
+        "scan_sweep_1.ogg"
+      ],
+      "gain": 0.51
+    },
+    "shield_bless": {
+      "files": [
+        "shield_bless_1.ogg"
+      ],
+      "gain": 0.58
+    },
+    "shield_block": {
+      "files": [
+        "shield_block_1.ogg",
+        "shield_block_2.ogg",
+        "shield_block_3.ogg"
+      ],
+      "gain": 0.4
+    },
+    "spear_hit": {
+      "files": [
+        "spear_hit_1.ogg",
+        "spear_hit_2.ogg",
+        "spear_hit_3.ogg"
+      ],
+      "gain": 0.47
+    },
+    "spear_throw": {
+      "files": [
+        "spear_throw_1.ogg",
+        "spear_throw_2.ogg"
+      ],
+      "gain": 0.45
+    },
+    "special_fire": {
+      "files": [
+        "special_fire_1.ogg"
+      ],
+      "gain": 0.43
+    },
+    "special_holy": {
+      "files": [
+        "special_holy_1.ogg"
+      ],
+      "gain": 0.45
+    },
+    "stone_hit": {
+      "files": [
+        "stone_hit_1.ogg",
+        "stone_hit_2.ogg",
+        "stone_hit_3.ogg"
+      ],
+      "gain": 0.41
+    },
+    "sword_hit": {
+      "files": [
+        "sword_hit_1.ogg",
+        "sword_hit_2.ogg",
+        "sword_hit_3.ogg"
+      ],
+      "gain": 0.43
+    },
+    "sword_swing": {
+      "files": [
+        "sword_swing_1.ogg",
+        "sword_swing_2.ogg",
+        "sword_swing_3.ogg"
+      ],
+      "gain": 0.52
+    },
+    "trident_hit": {
+      "files": [
+        "trident_hit_1.ogg",
+        "trident_hit_2.ogg",
+        "trident_hit_3.ogg"
+      ],
+      "gain": 0.4
+    },
+    "trident_swing": {
+      "files": [
+        "trident_swing_1.ogg",
+        "trident_swing_2.ogg",
+        "trident_swing_3.ogg"
+      ],
+      "gain": 0.51
+    },
+    "ui_back": {
+      "files": [
+        "ui_back_1.ogg"
+      ],
+      "gain": 0.7
+    },
+    "ui_click": {
+      "files": [
+        "ui_click_1.ogg",
+        "ui_click_2.ogg"
+      ],
+      "gain": 0.52
+    },
+    "ui_open": {
+      "files": [
+        "ui_open_1.ogg"
+      ],
+      "gain": 0.48
+    },
+    "upgrade_pick": {
+      "files": [
+        "upgrade_pick_1.ogg",
+        "upgrade_pick_2.ogg"
+      ],
+      "gain": 0.42
+    },
+    "verdict_angel": {
+      "files": [
+        "verdict_angel_1.ogg"
+      ],
+      "gain": 0.52
+    },
+    "verdict_demon": {
+      "files": [
+        "verdict_demon_1.ogg"
+      ],
+      "gain": 0.49
+    },
+    "victory_cheer": {
+      "files": [
+        "victory_cheer_1.ogg"
+      ],
+      "gain": 0.45
+    },
+    "wave_clear": {
+      "files": [
+        "wave_clear_1.ogg"
+      ],
+      "gain": 0.43
+    },
+    "wave_start": {
+      "files": [
+        "wave_start_1.ogg"
+      ],
+      "gain": 0.47
+    },
+    "wing_flap_feather": {
+      "files": [
+        "wing_flap_feather_1.ogg",
+        "wing_flap_feather_2.ogg",
+        "wing_flap_feather_3.ogg"
+      ],
+      "gain": 0.44
+    },
+    "wing_flap_leather": {
+      "files": [
+        "wing_flap_leather_1.ogg",
+        "wing_flap_leather_2.ogg",
+        "wing_flap_leather_3.ogg"
+      ],
+      "gain": 0.44
+    }
+  },
+  "loops": {
+    "amb_heaven": {
+      "file": "amb_heaven.ogg",
+      "gain": 0.43,
+      "loop": true
+    },
+    "amb_hell": {
+      "file": "amb_hell.ogg",
+      "gain": 0.38,
+      "loop": true
+    },
+    "amb_scan": {
+      "file": "amb_scan.ogg",
+      "gain": 0.43,
+      "loop": true
+    },
+    "low_hp": {
+      "file": "low_hp.ogg",
+      "gain": 0.38,
+      "loop": true
+    }
+  },
+  "music": {
+    "music_battle_angel": {
+      "file": "music_battle_angel.ogg",
+      "gain": 0.6,
+      "loop": true,
+      "bpm": 140,
+      "key": "D major",
+      "bars": 40
+    },
+    "music_battle_demon": {
+      "file": "music_battle_demon.ogg",
+      "gain": 0.6,
+      "loop": true,
+      "bpm": 140,
+      "key": "D minor",
+      "bars": 40
+    },
+    "music_boss": {
+      "file": "music_boss.ogg",
+      "gain": 0.6,
+      "loop": true,
+      "bpm": 140,
+      "key": "D minor",
+      "bars": 32
+    },
+    "music_scan": {
+      "file": "music_scan.ogg",
+      "gain": 0.6,
+      "loop": true,
+      "bpm": 90,
+      "key": "D minor / D major",
+      "bars": 16
+    },
+    "music_title": {
+      "file": "music_title.ogg",
+      "gain": 0.6,
+      "loop": true,
+      "bpm": 96,
+      "key": "D major / D minor",
+      "bars": 24
+    },
+    "stinger_defeat": {
+      "file": "stinger_defeat.ogg",
+      "gain": 0.6,
+      "loop": false,
+      "bpm": 80,
+      "key": "D minor"
+    },
+    "stinger_victory": {
+      "file": "stinger_victory.ogg",
+      "gain": 0.6,
+      "loop": false,
+      "bpm": 120,
+      "key": "D major"
+    }
+  }
+}
