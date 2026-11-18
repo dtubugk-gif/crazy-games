@@ -12,7 +12,9 @@ export class Audio {
     this.loops = new Map(); this.music = new Map();
     this.musicState = null; this.ambState = new Map();
     this.duck = 1; this.lastPlay = new Map();
+    this.decoding = new Set(); this.wantMusic = undefined; this.ambWeights = {};
   }
+  isMusicFile(f) { return /^(music|stinger|amb|low)_/.test(f); }
 
   async preload() {
     try {
@@ -28,10 +30,13 @@ export class Audio {
     // Safari (esp. older iOS) cannot decode Ogg Vorbis: use the AAC copies there
     const a = document.createElement('audio');
     const ogg = a.canPlayType('audio/ogg; codecs="vorbis"') !== '' && !/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    await Promise.all([...files].map(async f => {
+    const get = async f => {
       const url = ogg ? BASE + f : BASE + 'm4a/' + f.replace(/\.ogg$/, '.mp4');
-      try { const r = await fetch(url); if (r.ok) this.raw.set(f, await r.arrayBuffer()); } catch (e) { /* skip */ }
-    }));
+      try { const r = await fetch(url); if (r.ok) { this.raw.set(f, await r.arrayBuffer()); if (this.ctx) this.decode(f); } } catch (e) { /* skip */ }
+    };
+    const all = [...files];
+    await Promise.all(all.filter(f => this.isMusicFile(f)).map(get)); // music + ambience first: they are what you hear on the menus
+    await Promise.all(all.filter(f => !this.isMusicFile(f)).map(get));
   }
 
   // must be called from a user gesture
@@ -53,12 +58,23 @@ export class Audio {
     this.sfxBus = c.createGain(); this.sfxBus.connect(this.comp);
     this.ambBus = c.createGain(); this.ambBus.connect(this.comp);
     this.applyVolumes();
+    this.ready = true; // sounds that are not decoded yet are simply skipped until they are
+    if (this.wantMusic !== undefined) { const w = this.wantMusic; this.wantMusic = undefined; this.setMusic(w, 1.2); }
+    this.setAmbience(this.ambWeights);
     if (c.state !== 'running') await c.resume();
-    // decode everything that is already downloaded
-    await Promise.all([...this.raw.entries()].map(async ([f, ab]) => {
-      try { this.buf.set(f, await c.decodeAudioData(ab.slice(0))); } catch (e) { console.warn('decode', f, e); }
-    }));
-    this.ready = true;
+    const have = [...this.raw.keys()];
+    await Promise.all(have.filter(f => this.isMusicFile(f)).map(f => this.decode(f)));
+    have.filter(f => !this.isMusicFile(f)).forEach(f => this.decode(f));
+  }
+  /** decode one downloaded file; a track or ambience that was waiting for it starts now */
+  async decode(f) {
+    if (!this.ctx || this.buf.has(f) || this.decoding.has(f) || !this.raw.has(f)) return;
+    this.decoding.add(f);
+    try { this.buf.set(f, await this.ctx.decodeAudioData(this.raw.get(f).slice(0))); } catch (e) { console.warn('decode', f, e); }
+    this.decoding.delete(f);
+    const s = this.musicState;
+    if (s && this.manifest.music?.[s]?.file === f && !this.music.has(s)) { this.musicState = null; this.setMusic(s, 1.2); }
+    if (Object.values(this.manifest.loops || {}).some(l => l.file === f)) { this.ambState.clear(); this.setAmbience(this.ambWeights); }
   }
 
   applyVolumes() {
@@ -141,7 +157,8 @@ export class Audio {
 
   /** music: any looping 'music_*' entry of the manifest, or null for silence */
   setMusic(state, fade = 2.2) {
-    if (!this.ready || state === this.musicState) return;
+    if (!this.ready) { this.wantMusic = state; return; } // starts on the first tap
+    if (state === this.musicState) return;
     this.musicState = state;
     const t = this.ctx.currentTime;
     for (const name of Object.keys(this.manifest.music || {}).filter(n => n.startsWith('music_'))) {
@@ -169,6 +186,7 @@ export class Audio {
 
   /** ambience weights {amb_meadow: 0..1, ...} crossfaded */
   setAmbience(weights) {
+    this.ambWeights = { ...this.ambWeights, ...weights };
     if (!this.ready) return;
     const t = this.ctx.currentTime;
     for (const [name, w] of Object.entries(weights)) {

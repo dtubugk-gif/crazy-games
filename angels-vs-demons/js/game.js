@@ -1,13 +1,13 @@
 // מלאכים נגד שדים - main: boot, title, face scan + verdict, the battle (waves, upgrades, boss), HUD, input, camera.
 import * as THREE from 'three';
-import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=7';
-import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=7';
-import { FX, C } from './fx.js?v=7';
-import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=7';
-import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=7';
-import { EvoPlayer } from './evolve.js?v=7';
-import { FaceScan, paintVerdict, portrait } from './scan.js?v=7';
-import { Audio } from './audio.js?v=7';
+import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=8';
+import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=8';
+import { FX, C } from './fx.js?v=8';
+import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=8';
+import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=8';
+import { EvoPlayer } from './evolve.js?v=8';
+import { FaceScan, paintVerdict, portrait } from './scan.js?v=8';
+import { Audio } from './audio.js?v=8';
 
 const DEDICATION = 'המשחק מוקדש לישי'; // the follower who asked for the game
 const $ = id => document.getElementById(id);
@@ -107,6 +107,7 @@ class Game {
     this.verdict = null; this.portraitURL = null; this.paintedPhoto = null;
     addEventListener('resize', () => this.resize()); this.resize();
     window.__audioUnlock = () => this.unlockAudio();
+    for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) addEventListener(ev, () => this.unlockAudio(), { capture: true, passive: true });
     document.addEventListener('visibilitychange', () => { if (document.hidden) { this.audio.suspend(); if (this.state === 'battle' && !this.paused) this.pause(true); } else this.audio.resume(); });
     window.__game = this;
     this.boot();
@@ -123,7 +124,7 @@ class Game {
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); this.fitTitleBg?.();
     this.fx.setScale(h * this.renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2)));
   }
-  async unlockAudio() { if (this.audio.ready) { this.audio.resume(); return; } await this.audio.unlock(); this.music(this.state === 'title' ? 'music_title' : null); }
+  async unlockAudio() { if (this.audio.ready) { if (this.audio.ctx?.state !== 'running') this.audio.resume(); return; } if (this._unlocking) return; this._unlocking = true; try { await this.audio.unlock(); } finally { this._unlocking = false; } }
   music(n) { this.audio.setMusic(n); }
   sfx(name, x, y, o = {}) { this.audio.play(name, { pos: x != null ? { x, y: y ?? 5, z: 0 } : null, vol: o.vol, pitch: o.rate, minGap: o.gap }); }
   after(sec, fn) { this.timers.push({ t: this.t + sec, fn }); }
@@ -358,7 +359,7 @@ class Game {
     $('bEvoS').textContent = `מתחיל כ${FORMS[res.side][0].name} וגדל`;
     $('bEvoImg').src = angel ? 'ui/mode_evo.webp' : 'ui/mode_evo_d.webp';
     this.audio.play(angel ? 'verdict_angel' : 'verdict_demon', { duck: .25 });
-    this.music(null); this.audio.setAmbience({ amb_scan: 0, amb_heaven: angel ? .7 : 0, amb_hell: angel ? 0 : .7 });
+    this.music('music_scan'); this.audio.setAmbience({ amb_scan: .4, amb_heaven: angel ? .5 : 0, amb_hell: angel ? 0 : .5 });
   }
 
   // ---------------------------------------------------------------- battle
