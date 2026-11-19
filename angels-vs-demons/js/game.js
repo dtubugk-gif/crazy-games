@@ -1,16 +1,16 @@
 // מלאכים נגד שדים - main: boot, title, face scan + verdict, the battle (waves, upgrades, boss), HUD, input, camera.
 import * as THREE from 'three';
-import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=10';
-import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=10';
-import { FX, C } from './fx.js?v=10';
-import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=10';
-import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=10';
-import { EvoPlayer } from './evolve.js?v=10';
-import { FaceScan, paintVerdict, portrait } from './scan.js?v=10';
-import { Audio } from './audio.js?v=10';
-import { Prize, PRIZE_MODEL } from './prize.js?v=10';
+import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=11';
+import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=11';
+import { FX, C } from './fx.js?v=11';
+import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=11';
+import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=11';
+import { EvoPlayer } from './evolve.js?v=11';
+import { FaceScan, paintVerdict, portrait } from './scan.js?v=11';
+import { Audio } from './audio.js?v=11';
+import { Prize, PRIZE_MODEL } from './prize.js?v=11';
 
-const BUILD = 10; // bump with version.json on every deploy
+const BUILD = 11; // bump with version.json on every deploy
 const DEDICATION = 'המשחק מוקדש לישי'; // the follower who asked for the game
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -378,7 +378,7 @@ class Game {
     const o = this.overlay(`<h2>איזה קרב?</h2><p>אתה ${s.name}. איך נלחמים היום?</p>
       <div id="ups"><button class="up mode" id="mArmy"><img src="ui/mode_army.webp" alt=""><b>מצב צבא</b><span>צבא שלם של ${s.names} נלחם איתך, 6 גלים</span></button>
       <button class="up mode" id="mEvo"><img src="ui/${s.key === 'angel' ? 'mode_evo' : 'mode_evo_d'}.webp" alt=""><b>מצב התפתחות</b><span>מתחיל כ${FORMS[s.key][0].name}, מנצח ומתפתח עד ${FORMS[s.key][6].name}</span></button>
-      <button class="up mode prize" id="mPrize"><img src="ui/mode_prize.webp" alt=""><b>להשיג את הפרס</b><span>שלב בלתי אפשרי. אף אחד עוד לא הצליח</span></button></div>`);
+      <button class="up mode prize" id="mPrize"><img src="ui/mode_prize.webp" alt=""><b>להשיג את הפרס</b><span>גביע זהב מחכה בשמיים. תיגעו בו ותנצחו!</span></button></div>`);
     o.querySelector('#mArmy').onclick = () => { this.sfx('ui_click'); this.closeOverlay(); this.startBattle('army'); };
     o.querySelector('#mEvo').onclick = () => { this.sfx('ui_click'); this.closeOverlay(); this.startBattle('evo'); };
     o.querySelector('#mPrize').onclick = () => { this.sfx('ui_click'); this.closeOverlay(); this.startBattle('prize'); };
@@ -739,7 +739,7 @@ class Game {
     const o = this.overlay(`<img class="endpic prizepic" src="ui/mode_prize.webp" alt="">
       <h2>הפרס ניצח!</h2><p>${taunt}</p>
       <div class="stats"><div><b>${close.toFixed(1)} מ׳</b><span>${newBest ? 'הכי קרוב שהגעתם!' : 'הכי קרוב שהגעתם'}</span></div><div><b>${this.prizeAlmost || 0}</b><span>פעמים כמעט</span></div><div><b>${fmtTime(sec)}</b><span>שרדתם</span></div><div><b>${tries}</b><span>ניסיונות</span></div></div>
-      <p class="small">אף אחד בעולם עוד לא השיג את הפרס.${this.cookies ? ` השומר אכל ${this.cookies} עוגיות.` : ''}</p>
+      <p class="small">מי יהיה הראשון להשיג את הפרס?${this.cookies ? ` השומר אכל ${this.cookies} עוגיות.` : ''}</p>
       <div class="row"><button class="big side" id="eAgain"><img class="bi" src="ui/ic/ui_again.webp" alt="" draggable="false"><span class="bt">לנסות שוב</span></button><button class="big sec" id="eMenu"><img class="bi" src="ui/ic/ui_menu.webp" alt="" draggable="false"><span class="bt">לתפריט</span></button></div>`);
     this.endButtons(o);
   }

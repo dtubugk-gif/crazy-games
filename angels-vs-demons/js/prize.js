@@ -4,9 +4,9 @@
 // always ends in defeat. The trick fires at TRIGGER distance, well before the touch distance, and while a trick runs
 // the prize is out of reach, so there is no way to reach it.
 import * as THREE from 'three';
-import { Assets } from './assets.js?v=10';
-import { ARENA } from './world.js?v=10';
-import { C } from './fx.js?v=10';
+import { Assets } from './assets.js?v=11';
+import { ARENA } from './world.js?v=11';
+import { C } from './fx.js?v=11';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = (a, b) => a + Math.random() * (b - a);
