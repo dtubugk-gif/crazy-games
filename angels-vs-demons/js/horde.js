@@ -8,9 +8,9 @@
 //  - your special blast also reaches the soldiers in the sky around you.
 // The counter starts at 300 and every one of them counts.
 import * as THREE from 'three';
-import { makeModel, animName, DISPLAY } from './actors.js?v=14';
-import { ARENA } from './world.js?v=14';
-import { ROLE_STATS } from './roster.js?v=14';
+import { makeModel, animName, DISPLAY } from './actors.js?v=15';
+import { ARENA } from './world.js?v=15';
+import { ROLE_STATS } from './roster.js?v=15';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -20,6 +20,7 @@ const SKY_HP = .55;            // a soldier of the army is lighter than a front-
 const PLANE = 1.5;             // closer than this to the fight plane, a swooping soldier can be hit
 const SWOOP_DMG = { small: 5, charger: 7, diver: 6, caster: 5, heavy: 8 };
 const VOLLEY_DMG = 7;
+const STORM_R = 3.1;           // a storm throw's blast radius: on a 7x3 grid over the arena they overlap everywhere
 
 /** render every enemy kind of this side into one atlas (rows = kinds, columns = wing-beat frames) */
 export function bakeHorde(renderer, foe) {
@@ -196,6 +197,7 @@ export class Horde {
   // ------------------------------------------------------------ orders
   /** the lowest-numbered soldier in the sky comes down to fight for good; cb(x, y, role, hpFrac) when it lands */
   dive(cb) {
+    if (this.storming) return false;
     let m = null; for (const o of this.m) if (o.state === 'idle' || o.state === 'cast') { m = o; break; }
     if (!m) return false;
     const P = this.g.player, side = Math.sign(m.x - (P ? P.x : 0)) || this.foeSide;
@@ -217,15 +219,15 @@ export class Horde {
     this.g.sfx('dash', m.tx, m.ty, { vol: .32, gap: .15 });
   }
   /** a soldier throws light / fire at where you are going */
-  fire(m) {
+  fire(m, o = null) {
     const g = this.g, P = g.player; if (!P || P.dead) return;
-    const tx = clamp(P.x + P.vx * .18 + rnd(-.5, .5), ARENA.x0, ARENA.x1), ty = clamp(P.y + P.vy * .18 + rnd(-.4, .4), ARENA.y0, ARENA.y1);
-    const ft = rnd(1.05, 1.35);
+    const tx = o ? o.tx : clamp(P.x + P.vx * .18 + rnd(-.5, .5), ARENA.x0, ARENA.x1), ty = o ? o.ty : clamp(P.y + P.vy * .18 + rnd(-.4, .4), ARENA.y0, ARENA.y1);
+    const ft = o ? o.ft : rnd(1.05, 1.35);
     const sp = this.volPool.pop() || new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: new THREE.Color(this.angelFoe ? 0xffe6a8 : 0xff7a2e), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-    sp.scale.setScalar(1.35); sp.renderOrder = 5; sp.visible = true; g.scene.add(sp);
+    sp.scale.setScalar(o?.big ? 2.2 : 1.35); sp.renderOrder = 5; sp.visible = true; g.scene.add(sp);
     const ring = this.ringPool.pop() || new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: ringTex(this.angelFoe), transparent: true, depthWrite: false, toneMapped: false }));
     ring.position.set(tx, ty, .05); ring.renderOrder = 4; ring.scale.setScalar(.01); g.scene.add(ring);
-    this.vols.push({ x0: m.x, y0: m.y, z0: m.z, tx, ty, t: 0, ft, arc: rnd(.6, 2.2), sp, ring });
+    this.vols.push({ x0: m.x, y0: m.y, z0: m.z, tx, ty, t: 0, ft, arc: o ? rnd(.4, 1.2) : rnd(.6, 2.2), sp, ring, R: o?.big ? STORM_R : 0, wave: o?.wave || 0, fxOn: o ? o.fxOn : true });
   }
   clearVolleys() { for (const v of this.vols) this.endVolley(v); this.vols.length = 0; }
   endVolley(v) { this.g.scene.remove(v.sp); this.volPool.push(v.sp); this.g.scene.remove(v.ring); this.ringPool.push(v.ring); }
@@ -234,8 +236,32 @@ export class Horde {
     this.clearVolleys(); this.cdV = 1.6; this.cdS = 2.2;
     for (const m of this.m) if (m.state === 'swoop') this.leavePlane(m, 'out');
   }
+  /** the last of them rise out of reach and rain fire / light over the WHOLE arena, wave after wave, harder every time */
+  storm() {
+    this.storming = true; this.waveN = 0; this.cdW = 1.8; this.clearVolleys();
+    for (const m of this.m) {
+      if (m.state === 'swoop') { this.leavePlane(m, 'out'); }
+      else if (m.state === 'dive') { m.state = 'idle'; m.cb = null; m.glow = 0; } // the ones on their way down turn back
+      else if (m.state === 'doomed') { m.state = 'idle'; m.hp = Math.max(1, m.hp); } // and the ones about to fall hold on
+      m.zS = -15 - Math.random() * 8; // up and away: deeper in the sky, out of reach of your blast
+    }
+  }
+  /** one storm wave: big throws on a grid over the whole arena, all landing at the same moment - nowhere is left to stand */
+  stormWave() {
+    const g = this.g, P = g.player; if (!P || P.dead) return;
+    const casters = this.m.filter(m => m.state === 'idle' || m.state === 'cast'); if (!casters.length) return;
+    const id = ++this.waveN, COLS = 7, ROWS = 3, ft = 1.25;
+    for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+      const tx = ARENA.x0 + (ARENA.x1 - ARENA.x0) * c / (COLS - 1) + rnd(-.25, .25);
+      const ty = ARENA.y0 + (ARENA.y1 - ARENA.y0) * (r + .5) / ROWS + rnd(-.2, .2);
+      const m = casters[(c * ROWS + r) % casters.length]; m.glow = 1;
+      this.fire(m, { tx, ty, ft, big: true, wave: id, fxOn: (c + r) % 2 === 0 });
+    }
+    g.sfx(g.foe.bossRoar, null, null, { vol: .35, gap: .5 });
+  }
   /** your special blast reaches the soldiers in the sky around you (the nearer, the sooner) */
   blast(x, y, R, dmg) {
+    if (this.storming) return; // they are out of reach now
     const v = this.view(), g = this.g;
     for (const m of this.m) {
       if ((m.state !== 'idle' && m.state !== 'cast' && m.state !== 'in') || m.role === 'rival' || m.z < -13) continue;
@@ -261,6 +287,7 @@ export class Horde {
   /** who attacks now: throws and swoops from all over the sky, more as you get further */
   director(dt) {
     const g = this.g, P = g.player; if (!P || P.dead) return;
+    if (this.storming) { this.cdW -= dt; if (this.cdW <= 0) { this.cdW = Math.max(1.35, 1.75 - this.waveN * .08); this.stormWave(); } return; }
     const p = (g.prizeKilled || 0) / 300, v = this.view();
     this.cdV -= dt; this.cdS -= dt;
     if (this.cdV <= 0) {
@@ -320,13 +347,16 @@ export class Horde {
       const x = q.x0 + (q.tx - q.x0) * u, y = q.y0 + (q.ty - q.y0) * u + Math.sin(u * Math.PI) * q.arc, z = q.z0 * (1 - u);
       q.sp.position.set(x, y, z);
       // the ring closes in to exactly the danger zone as the throw comes down
-      const R = (P ? P.r : .8) + .8, rs = 2 * R * (1 + .45 * (1 - Math.min(1, u * 1.25)));
+      const R = q.R || (P ? P.r : .8) + .8, rs = 2 * R * (1 + .45 * (1 - Math.min(1, u * 1.25)));
       q.ring.scale.set(rs, rs, 1); q.ring.material.opacity = Math.min(1, .35 + u * .9) * (u > .75 ? .75 + .25 * Math.sin(q.t * 40) : 1); q.ring.rotation.z = q.t * .8;
-      g.fx.glow.emit({ x, y, z, life: .3, size: .55, size1: .05, alpha: .8, color: this.angelFoe ? [1, .9, .62] : [1, .55, .2], color1: this.angelFoe ? [1, .7, .3] : [.8, .2, .05], drag: 0 });
+      if (q.fxOn) g.fx.glow.emit({ x, y, z, life: .3, size: q.R ? .9 : .55, size1: .05, alpha: .8, color: this.angelFoe ? [1, .9, .62] : [1, .55, .2], color1: this.angelFoe ? [1, .7, .3] : [.8, .2, .05], drag: 0 });
       if (u >= 1) {
-        g.fx.burst(q.tx, q.ty, this.angelFoe ? 'light' : 'fire', 12, .8);
+        g.fx.burst(q.tx, q.ty, this.angelFoe ? 'light' : 'fire', q.R ? 7 : 12, q.R ? 1.6 : .8);
         g.sfx(this.angelFoe ? 'orb_hit' : 'fireball_hit', q.tx, q.ty, { vol: .55, gap: .12 });
-        if (P && !P.dead && Math.hypot(P.x - q.tx, P.y - q.ty) < P.r + .8) g.hurtPlayer(VOLLEY_DMG, q.tx, q.ty);
+        if (q.R) { // a storm throw: the whole wave hits you at most once
+          if (P && !P.dead && this.hitWave !== q.wave && Math.hypot(P.x - q.tx, P.y - q.ty) < q.R + P.r) { this.hitWave = q.wave; g.stormHit(q.wave, q.tx, q.ty); }
+          if (this.shookWave !== q.wave) { this.shookWave = q.wave; g.shake(.45); }
+        } else if (P && !P.dead && Math.hypot(P.x - q.tx, P.y - q.ty) < P.r + .8) g.hurtPlayer(VOLLEY_DMG, q.tx, q.ty);
         this.endVolley(q); this.vols.splice(i, 1);
       }
     }
@@ -337,6 +367,7 @@ export class Horde {
         m.delay -= dt;
         if (m.delay <= 0) { this.home(m, v, h); const f = Math.min(1, dt * 1.7); m.x += (h.x - m.x) * f; m.y += (h.y - m.y) * f; if (Math.abs(h.x - m.x) < .5) m.state = 'idle'; }
       } else if (m.state === 'idle' || m.state === 'cast' || m.state === 'doomed') {
+        if (this.storming && m.zS) m.z += (Math.min(m.zS, m.z) - m.z) * Math.min(1, dt * 1.2);
         this.home(m, v, h); const f = Math.min(1, dt * 1.3); m.x += (h.x - m.x) * f; m.y += (h.y - m.y) * f;
         m.tilt *= .92;
         if (m.state === 'cast') { // glows, then throws

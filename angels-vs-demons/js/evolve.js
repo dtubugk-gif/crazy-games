@@ -1,9 +1,9 @@
 // Evolution mode hero: starts as the smallest of its side and evolves through 7 forms (roster.js FORMS).
 // Every form has its own attack / shoot / special (the MOVES below), played with that model's own animations.
-import { Player, makeModel } from './actors.js?v=14';
-import { FORMS, EVO_XP } from './roster.js?v=14';
-import { ARENA } from './world.js?v=14';
-import { C } from './fx.js?v=14';
+import { Player, makeModel } from './actors.js?v=15';
+import { FORMS, EVO_XP } from './roster.js?v=15';
+import { ARENA } from './world.js?v=15';
+import { C } from './fx.js?v=15';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));

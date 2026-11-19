@@ -1,10 +1,10 @@
 // Actors: the player (angel or demon hero), the 6 enemy roles of each side with their own AI, projectiles, heal orbs.
 // Everything lives on the 2D plane z = 0; models turn ~60° toward the way they face so wings and weapons read.
 import * as THREE from 'three';
-import { Assets, Anim, node, ownMaterials } from './assets.js?v=14';
-import { HEIGHT, ROLE_STATS } from './roster.js?v=14';
-import { ARENA } from './world.js?v=14';
-import { C } from './fx.js?v=14';
+import { Assets, Anim, node, ownMaterials } from './assets.js?v=15';
+import { HEIGHT, ROLE_STATS } from './roster.js?v=15';
+import { ARENA } from './world.js?v=15';
+import { C } from './fx.js?v=15';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = (a, b) => a + Math.random() * (b - a);

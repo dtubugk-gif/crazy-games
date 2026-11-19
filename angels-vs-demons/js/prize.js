@@ -1,13 +1,14 @@
 // "להשיג את הפרס": you alone against 300 of the other side. Only when all 300 are down does the prize appear:
 // a golden trophy (made with Kiln) comes down from the sky in a beam of light; fly to it and it is yours.
 import * as THREE from 'three';
-import { Assets } from './assets.js?v=14';
-import { ARENA } from './world.js?v=14';
-import { C } from './fx.js?v=14';
+import { Assets } from './assets.js?v=15';
+import { ARENA } from './world.js?v=15';
+import { C } from './fx.js?v=15';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 export const PRIZE_MODEL = 'prize_trophy';
 export const PRIZE_TOTAL = 300;
+export const STORM_LEFT = 30;   // with this many left, the last storm starts: it covers the whole arena and only gets hotter
 const H = 2.9; // how tall the trophy is drawn (world units)
 
 /** which enemy is number i (0..299): the mix gets tougher as you go; two champions, the last one closes the level */
