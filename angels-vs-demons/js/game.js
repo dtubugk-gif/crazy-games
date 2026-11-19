@@ -1,17 +1,17 @@
 // מלאכים נגד שדים - main: boot, title, face scan + verdict, the battle (waves, upgrades, boss), HUD, input, camera.
 import * as THREE from 'three';
-import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=13';
-import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=13';
-import { FX, C } from './fx.js?v=13';
-import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=13';
-import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=13';
-import { EvoPlayer } from './evolve.js?v=13';
-import { FaceScan, paintVerdict, portrait } from './scan.js?v=13';
-import { Audio } from './audio.js?v=13';
-import { Trophy, PRIZE_MODEL, PRIZE_TOTAL, prizeRole } from './prize.js?v=13';
-import { Horde, bakeHorde } from './horde.js?v=13';
+import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=14';
+import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=14';
+import { FX, C } from './fx.js?v=14';
+import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=14';
+import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=14';
+import { EvoPlayer } from './evolve.js?v=14';
+import { FaceScan, paintVerdict, portrait } from './scan.js?v=14';
+import { Audio } from './audio.js?v=14';
+import { Trophy, PRIZE_MODEL, PRIZE_TOTAL, prizeRole } from './prize.js?v=14';
+import { Horde, bakeHorde } from './horde.js?v=14';
 
-const BUILD = 13; // bump with version.json on every deploy
+const BUILD = 14; // bump with version.json on every deploy
 const DEDICATION = 'המשחק מוקדש לישי'; // the follower who asked for the game
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -432,7 +432,7 @@ class Game {
     if (this.player) { this.player.remove(); this.player = null; }
     if (this.trophy) { this.trophy.remove(); this.trophy = null; }
     if (this.horde) { this.horde.remove(); this.horde = null; }
-    this.timers = []; this.fx.clear(); this.queue = []; this.boss = null; this.lowLoop?.stop(); this.lowLoop = null; this.armyPending = new Set();
+    this.timers = []; this.fx.clear(); this.queue = []; this.freeze = false; this.boss = null; this.lowLoop?.stop(); this.lowLoop = null; this.armyPending = new Set();
   }
   nextWave() {
     this.wave++; this.waveDone = false;
@@ -535,7 +535,7 @@ class Game {
   spawn(role, o = {}) {
     let hpMul = o.hpMul || 1;
     if (this.mode === 'evo') hpMul *= ({ rival: .9, boss: 1.15 }[role] || (1 + (this.wave - 1) * .13));
-    if (this.mode === 'prize' && role !== 'rival') hpMul *= 1 + this.prizeSpawned / PRIZE_TOTAL * .8; // the later ones are tougher
+    if (this.mode === 'prize' && role !== 'rival') hpMul *= 1 + (this.prizeKilled || 0) / PRIZE_TOTAL * .6; // the later ones are tougher
     const e = new Enemy(this, this.foe, role, { ...o, hpMul });
     e.m.fit.userData.s0 = e.m.fit.scale.x;
     if (!o.instant && o.x == null) e.vx = this.side.homeDir * 8; // fly in from the enemy side
@@ -562,7 +562,7 @@ class Game {
   offerUpgrades() {
     if (!this.player || this.player.dead) return;
     if (this.mode === 'evo') { this.heal(Math.round(this.player.maxHp * .15)); this.after(.4, () => this.nextWave()); return; }
-    this.state = 'upgrade';
+    this.state = 'upgrade'; if (this.mode === 'prize') this.freeze = true; // all 300 attack at once: the fight stops while you choose
     const P = this.player, pool = UPGRADES.filter(u => (u.id === 'heal' ? P.hp < P.maxHp * .8 : true) && (P.up[u.id] || 0) < u.max && (u.id !== 'army' || this.mode === 'army'));
     const pick = []; while (pick.length < 3 && pool.length) pick.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
     const word = this.side.key === 'angel' ? 'ברכה' : 'קללה';
@@ -571,7 +571,7 @@ class Game {
     this.sfx('ui_open');
     o.querySelectorAll('.up').forEach(b => b.onclick = () => {
       const u = pick[+b.dataset.i]; this.applyUpgrade(u); this.sfx('upgrade_pick'); this.closeOverlay();
-      this.state = 'battle'; if (this.mode === 'prize') { this.prizeHold = 0; this.spawnT = 1; this.ui_banner(`נשארו ${PRIZE_TOTAL - this.prizeKilled}`, 'ממשיכים!'); return; } this.after(.6, () => this.nextWave());
+      this.state = 'battle'; if (this.mode === 'prize') { this.freeze = false; this.breather(); this.ui_banner(`נשארו ${PRIZE_TOTAL - this.prizeKilled}`, 'ממשיכים!'); return; } this.after(.6, () => this.nextWave());
     });
   }
   applyUpgrade(u) {
@@ -612,7 +612,7 @@ class Game {
     if (P.up.vamp) this.heal(4 * P.up.vamp, true);
     if (P.evo && !e.summoned && P.gainXp(XP_GAIN[e.role] || 0)) this.after(.3, () => this.evolve());
     else if (P.evo && e.summoned) P.gainXp(3);
-    if (!e.summoned && (Math.random() < .17 || this.kills % 7 === 0) && e.role !== 'boss') this.orbs.push(new Orb(this, e.x, e.y));
+    if (!e.summoned && (e.swarm ? Math.random() < .05 || this.kills % 13 === 0 : Math.random() < .17 || this.kills % 7 === 0) && e.role !== 'boss') this.orbs.push(new Orb(this, e.x, e.y));
     if (e.role === 'rival') { this.orbs.push(new Orb(this, e.x, e.y)); this.slowmo(.8, .35); this.ui_banner('האלוף הובס!', ''); }
     if (e.role === 'boss') this.bossDown(e);
     if (this.mode === 'prize' && !e.summoned) this.prizeKill(e);
@@ -627,7 +627,7 @@ class Game {
     this.after(3, () => this.win());
   }
   hurtPlayer(dmg, fx, fy, dot = false) {
-    const P = this.player; if (!P || P.dead || P.inv > 0 || this.state === 'ending' || this.state === 'intro') return;
+    const P = this.player; if (!P || P.dead || P.inv > 0 || this.state === 'ending' || this.state === 'intro' || this.state === 'upgrade') return;
     if (this.mode === 'evo') dmg = Math.ceil(dmg * 2.1); // alone against them all: every hit counts
     if (this.mode === 'prize') dmg = Math.ceil(dmg * (1.1 + (this.prizeKilled || 0) / PRIZE_TOTAL * .6)); // alone against 300: they hit harder the further you get
     if (P.blockT > 0) { dmg = Math.ceil(dmg * .15); this.fx.burst(P.x + P.face, P.y, 'block', 10); this.sfx('shield_block', P.x, P.y, { vol: .7, gap: .08 }); }
@@ -666,6 +666,7 @@ class Game {
     const R = 8.5, dmg = 48 * P.dmgMul;
     for (const e of this.enemies) if (!e.dead && Math.hypot(e.x - P.x, e.y - P.y) < R + e.r) this.hurtEnemy(e, e.role === 'boss' ? dmg * .8 : dmg, Math.sign(e.x - P.x) * 16, 4);
     for (const s of this.shots) if (s.from === 'enemy' && Math.hypot(s.x - P.x, s.y - P.y) < R) s.kill = true;
+    if (this.horde && this.mode === 'prize') this.horde.blast(P.x, P.y, R, dmg); // the blast reaches the army in the sky around you
     if (this.side.key === 'angel') { this.fx.rays(P.x, P.y, 16, R, .8, C.goldW); this.fx.ring(P.x, P.y, .5, R, .6, C.goldW, .9); this.fx.burst(P.x, P.y, 'light', 50, 2); this.fx.feathers(P.x, P.y, 24, 2); }
     else { this.fx.ring(P.x, P.y, .5, R, .6, C.fire, .95); this.fx.ring(P.x, P.y, .3, R * .7, .5, C.fireHot, .7); this.fx.burst(P.x, P.y, 'fire', 60, 2.2); this.fx.embers(P.x, P.y, 50, 3); }
     this.sfx(this.side.specialSfx, P.x, P.y, { vol: 1 }); this.audio.duckMusic(.5, 1);
@@ -686,13 +687,14 @@ class Game {
 
   // ---------------------------------------------------------------- "להשיג את הפרס": you vs 300, the trophy at the end
   prizeStart() {
-    this.wave = 1; this.waveDef = { n: 1, title: 'להשיג את הפרס', spawn: [], cap: 5 }; this.queue = []; this.spawnT = 1;
+    this.wave = 1; this.waveDef = { n: 1, title: 'להשיג את הפרס', spawn: [], cap: 5 }; this.queue = []; this.spawnT = .6;
     this.camGoal = { x: 0, y: 6, z: 15.5, lx: 0, ly: 5.9, fov: 38 };
     this.sfx('wave_start', null, null, { vol: .8 });
-    this.ui_banner('300', `כל ה${this.foe.names.replace('ה', '')} בבת אחת. אתה לבד!`);
-    this.hint('כל 75 שתביסו - כוח חדש. בסוף מחכה הפרס!', 6);
+    this.ui_banner('300', `כל ה${this.foe.names.replace('ה', '')} תוקפים בבת אחת!`);
+    this.hint('זוזו מהעיגולים! כל 75 שתביסו - כוח חדש.', 6);
+    this.after(7, () => { if (this.state === 'battle' && this.mode === 'prize') this.hint('כשהמיוחד מלא - הוא פוגע גם בצבא שבשמיים!', 5); });
   }
-  /** all 300 at once: the whole horde fills the sky (sprites baked from the real models, one per kind) */
+  /** all 300 at once: the whole army is in the sky around you and attacks from the first second */
   makeHorde() {
     this.hordeAtlas = this.hordeAtlas || {};
     const atlas = this.hordeAtlas[this.foe.key] || (this.hordeAtlas[this.foe.key] = bakeHorde(this.renderer, this.foe));
@@ -706,22 +708,30 @@ class Game {
     if (this.trophy) this.trophy.update(dt);
     if (this.state !== 'battle' || this.prizeDone || !this.horde) return;
     this.prizeT += dt;
-    const alive = this.enemies.filter(e => !e.dead && !e.summoned).length, diving = this.horde.m.filter(m => m.state === 'dive').length;
-    // every 75 down: no one dives in, the last ones fall, then you pick a power
-    if (this.prizeHold) { if (alive === 0 && !diving && this.prizeHold === 1) { this.prizeHold = 2; this.sfx('wave_clear', null, null, { vol: .8 }); this.after(1.2, () => this.offerUpgrades()); } this.hud(); return; }
-    const cap = Math.min(14, 8 + Math.floor(this.prizeKilled / 50)) - (this.lowEnd ? 4 : 0);
+    // the ones nearest the fight come down for good as full fighters (the rest attack from the sky meanwhile)
+    const alive = this.enemies.filter(e => !e.dead && !e.summoned && !e.swarm).length, diving = this.horde.diving;
+    const cap = Math.min(10, 6 + Math.floor(this.prizeKilled / 60)) - (this.lowEnd ? 3 : 0);
     this.spawnT -= dt;
-    if (this.horde.next < PRIZE_TOTAL && alive + diving < cap && this.spawnT <= 0) {
-      this.spawnT = rnd(.25, .6);
-      this.horde.dive((x, y, role) => {
+    if (alive + diving < cap && this.spawnT <= 0) {
+      this.spawnT = rnd(.3, .7);
+      this.horde.dive((x, y, role, hpFrac) => {
         if (this.state !== 'battle' && this.state !== 'upgrade') return;
-        const e = this.spawn(role, { x, y, instant: true }); e.vx = -Math.sign(x) * 4;
-        if (role === 'rival') { this.ui_banner('האלוף מגיע!', this.horde.next >= PRIZE_TOTAL ? 'האחרון מכולם!' : `${this.foe.roles.rival.name} יצא מהצבא`); this.sfx('rival_appear'); }
+        const e = this.spawn(role, { x, y, instant: true }); e.vx = -Math.sign(x - this.player.x) * 4;
+        e.hp = Math.max(1, Math.round(e.maxHp * clamp(hpFrac ?? 1, .3, 1)));
+        if (role === 'rival') { this.ui_banner('האלוף מגיע!', this.horde.left === 0 ? 'האחרון מכולם!' : `${this.foe.roles.rival.name} יצא מהצבא`); this.sfx('rival_appear'); }
       });
-      this.prizeSpawned = this.horde.next;
     }
-    if (this.prizeKilled >= 100 && !this.surrounded) { this.surrounded = true; this.horde.surround(); this.ui_banner('הם מקיפים אותך!', 'מעכשיו הם באים מכל הצדדים'); this.sfx('rival_appear', null, null, { vol: .6 }); }
+    this.prizeSpawned = PRIZE_TOTAL - this.horde.left;
+    if (this.prizeKilled >= 100 && !this.surrounded) { this.surrounded = true; this.horde.surround(); this.ui_banner('הם מקיפים אותך!', 'כולם תוקפים מכל הצדדים'); this.sfx('rival_appear', null, null, { vol: .6 }); }
     this.hud();
+  }
+  /** after a power pick: the army backs off a moment and nothing is in the air */
+  breather() {
+    const P = this.player; P.inv = Math.max(P.inv, 1.2);
+    this.horde?.breather();
+    for (const s of this.shots) if (s.from === 'enemy') s.kill = true;
+    for (const e of this.enemies) if (!e.dead && !e.swarm) { const dx = e.x - P.x, dy = e.y - P.y, l = Math.hypot(dx, dy) || 1; if (l < 6) { e.kx += dx / l * 14; e.ky += dy / l * 6; } }
+    this.burstSide(P.x, P.y, 1.1); this.shake(.3);
   }
   /** one of the 300 is down */
   prizeKill(e) {
@@ -729,7 +739,7 @@ class Game {
     this.prizeKilled++;
     const k = this.prizeKilled, left = PRIZE_TOTAL - k;
     if (k >= PRIZE_TOTAL) return this.prizeAllDown();
-    if (k % 75 === 0) { this.prizeHold = 1; this.ui_banner(`${k} הובסו!`, 'עוד רגע - כוח חדש'); }
+    if (k % 75 === 0) { this.ui_banner(`${k} הובסו!`, 'כוח חדש!'); this.sfx('wave_clear', null, null, { vol: .8 }); this.after(.7, () => { if (this.state === 'battle' && !this.prizeDone) this.offerUpgrades(); }); }
     else if (k % 50 === 0 || left === 10) { this.ui_banner(`נשארו ${left}!`, left <= 10 ? 'כמעט שם!' : ''); this.sfx('wave_clear', null, null, { vol: .5 }); }
   }
   /** all 300 down: the prize comes down from the sky */
@@ -737,6 +747,7 @@ class Game {
     this.prizeDone = true;
     for (const o of this.enemies) if (!o.dead) this.killEnemy(o);
     for (const s of this.shots) if (s.from === 'enemy') s.kill = true;
+    this.horde?.clearVolleys();
     this.slowmo(1.6, .3); this.shake(.6); this.music(null);
     this.audio.stinger('stinger_victory');
     this.ui_banner('הבסת את כל ה-300!', 'הפרס יורד מהשמיים…');
@@ -860,7 +871,7 @@ class Game {
   // ---------------------------------------------------------------- frame
   frame() {
     const now = performance.now(); let raw = Math.min(.05, (now - (this.lastNow || now)) / 1000); this.lastNow = now;
-    if (this.paused) raw = 0;
+    if (this.paused || this.freeze) raw = 0;
     let dt = raw;
     if (this.stopT > 0) { this.stopT -= raw; dt = raw * .05; }
     if (this.slowT > 0) { this.slowT -= raw; dt *= this.slowS; }

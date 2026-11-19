@@ -1,10 +1,10 @@
 // Actors: the player (angel or demon hero), the 6 enemy roles of each side with their own AI, projectiles, heal orbs.
 // Everything lives on the 2D plane z = 0; models turn ~60° toward the way they face so wings and weapons read.
 import * as THREE from 'three';
-import { Assets, Anim, node, ownMaterials } from './assets.js?v=13';
-import { HEIGHT, ROLE_STATS } from './roster.js?v=13';
-import { ARENA } from './world.js?v=13';
-import { C } from './fx.js?v=13';
+import { Assets, Anim, node, ownMaterials } from './assets.js?v=14';
+import { HEIGHT, ROLE_STATS } from './roster.js?v=14';
+import { ARENA } from './world.js?v=14';
+import { C } from './fx.js?v=14';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -410,7 +410,7 @@ export class Enemy extends Actor {
         this.lookAtPlayer();
         const angel = this.def.key === 'angel';
         if (this.cd.c <= 0 && !this.act) {
-          const allies = (this.isAlly ? g.allies : g.enemies).filter(e => e !== this && !e.dead && e.shield <= 0 && Math.hypot(e.x - this.x, e.y - this.y) < 8);
+          const allies = (this.isAlly ? g.allies : g.enemies).filter(e => e !== this && !e.dead && !e.swarm && e.shield <= 0 && Math.hypot(e.x - this.x, e.y - this.y) < 8);
           this.cd.c = this.isAlly ? rnd(12, 15) : rnd(7, 9); // your casters bless less often so the screen stays readable
           if (allies.length) {
             this.doAct('shield', [{ t: .55, fn: () => { for (const a of [this, ...allies].slice(0, this.isAlly ? 3 : 4)) g.giveShield(a, angel); if (this.isAlly && g.player && Math.hypot(g.player.x - this.x, g.player.y - this.y) < 10) g.heal(6); g.sfx('shield_bless', this.x, this.y, { vol: .7 }); } }]);
