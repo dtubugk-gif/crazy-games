@@ -1,16 +1,17 @@
 // מלאכים נגד שדים - main: boot, title, face scan + verdict, the battle (waves, upgrades, boss), HUD, input, camera.
 import * as THREE from 'three';
-import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=12';
-import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=12';
-import { FX, C } from './fx.js?v=12';
-import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=12';
-import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=12';
-import { EvoPlayer } from './evolve.js?v=12';
-import { FaceScan, paintVerdict, portrait } from './scan.js?v=12';
-import { Audio } from './audio.js?v=12';
-import { Trophy, PRIZE_MODEL, PRIZE_TOTAL, prizeRole } from './prize.js?v=12';
+import { Assets, COMMON, SIDE_MODELS } from './assets.js?v=13';
+import { makeRenderer, makeScene, buildArena, updateWorld, ARENA } from './world.js?v=13';
+import { FX, C } from './fx.js?v=13';
+import { Player, Enemy, Shot, Orb, makeModel, animName } from './actors.js?v=13';
+import { SIDES, WAVES, UPGRADES, CREDITS, FORMS, EVO_WAVES, EVO_XP, XP_GAIN } from './roster.js?v=13';
+import { EvoPlayer } from './evolve.js?v=13';
+import { FaceScan, paintVerdict, portrait } from './scan.js?v=13';
+import { Audio } from './audio.js?v=13';
+import { Trophy, PRIZE_MODEL, PRIZE_TOTAL, prizeRole } from './prize.js?v=13';
+import { Horde, bakeHorde } from './horde.js?v=13';
 
-const BUILD = 12; // bump with version.json on every deploy
+const BUILD = 13; // bump with version.json on every deploy
 const DEDICATION = 'המשחק מוקדש לישי'; // the follower who asked for the game
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -378,7 +379,7 @@ class Game {
     const o = this.overlay(`<h2>איזה קרב?</h2><p>אתה ${s.name}. איך נלחמים היום?</p>
       <div id="ups"><button class="up mode" id="mArmy"><img src="ui/mode_army.webp" alt=""><b>מצב צבא</b><span>צבא שלם של ${s.names} נלחם איתך, 6 גלים</span></button>
       <button class="up mode" id="mEvo"><img src="ui/${s.key === 'angel' ? 'mode_evo' : 'mode_evo_d'}.webp" alt=""><b>מצב התפתחות</b><span>מתחיל כ${FORMS[s.key][0].name}, מנצח ומתפתח עד ${FORMS[s.key][6].name}</span></button>
-      <button class="up mode prize" id="mPrize"><img src="ui/mode_prize.webp" alt=""><b>להשיג את הפרס</b><span>לבד נגד 300 ${SIDES[s.enemy].names}. תביסו את כולם והפרס שלכם!</span></button></div>`);
+      <button class="up mode prize" id="mPrize"><img src="ui/mode_prize.webp" alt=""><b>להשיג את הפרס</b><span>לבד נגד 300 ${SIDES[s.enemy].names} בבת אחת. תביסו את כולם והפרס שלכם!</span></button></div>`);
     o.querySelector('#mArmy').onclick = () => { this.sfx('ui_click'); this.closeOverlay(); this.startBattle('army'); };
     o.querySelector('#mEvo').onclick = () => { this.sfx('ui_click'); this.closeOverlay(); this.startBattle('evo'); };
     o.querySelector('#mPrize').onclick = () => { this.sfx('ui_click'); this.closeOverlay(); this.startBattle('prize'); };
@@ -402,7 +403,7 @@ class Game {
     $('meImg').src = this.portraitURL || heroBadge(this.side.key);
     $('xpRow').classList.toggle('hidden', this.mode !== 'evo'); $('armyN').classList.toggle('hidden', this.mode !== 'army');
     document.body.classList.toggle('prizeMode', this.mode === 'prize');
-    if (this.mode === 'prize') { this.save.prizeTries = (this.save.prizeTries || 0) + 1; writeSave(this.save); this.prizeSpawned = 0; this.prizeKilled = 0; this.prizeHold = 0; this.prizeDone = false; this.prizeT = 0; }
+    if (this.mode === 'prize') { this.save.prizeTries = (this.save.prizeTries || 0) + 1; writeSave(this.save); this.prizeSpawned = 0; this.prizeKilled = 0; this.prizeHold = 0; this.prizeDone = false; this.prizeT = 0; this.surrounded = false; }
     this.formButtons();
     $('hud').classList.remove('hidden'); $('controls').classList.toggle('hidden', isPC && !('ontouchstart' in window)); $('bossBar').classList.add('hidden');
     $('fade').classList.remove('on');
@@ -416,6 +417,7 @@ class Game {
     else if (this.mode === 'prize') this.ui_banner('להשיג את הפרס', `אתה נגד 300 ${this.foe.names}. תביס את כולם והפרס שלך!`);
     else this.ui_banner(this.side.youAre, `הצבא שלך איתך - ${this.foe.names} בדרך!`);
     this.armyLost = 0; this.reinforce(true);
+    if (this.mode === 'prize') this.makeHorde();
     this.after(2.1, () => { if (this.state !== 'intro') return; this.state = 'battle'; if (!this.save.help && isPC) this.hint(`תעופה: WASD · התקפה: J · זריקה: K · דאש: Shift · מיוחד: I`, 7); else if (!this.save.help) this.hint('ג׳ויסטיק לעוף · הכפתור הגדול תוקף · הזריקה מכוונת לבד', 7); this.save.help = true; writeSave(this.save); if (this.mode === 'prize') this.prizeStart(); else this.nextWave(); });
   }
   burstSide(x, y, s = 1) {
@@ -429,6 +431,7 @@ class Game {
     for (const o of this.orbs) o.remove(); this.orbs = [];
     if (this.player) { this.player.remove(); this.player = null; }
     if (this.trophy) { this.trophy.remove(); this.trophy = null; }
+    if (this.horde) { this.horde.remove(); this.horde = null; }
     this.timers = []; this.fx.clear(); this.queue = []; this.boss = null; this.lowLoop?.stop(); this.lowLoop = null; this.armyPending = new Set();
   }
   nextWave() {
@@ -686,28 +689,38 @@ class Game {
     this.wave = 1; this.waveDef = { n: 1, title: 'להשיג את הפרס', spawn: [], cap: 5 }; this.queue = []; this.spawnT = 1;
     this.camGoal = { x: 0, y: 6, z: 15.5, lx: 0, ly: 5.9, fov: 38 };
     this.sfx('wave_start', null, null, { vol: .8 });
-    this.ui_banner('300', `${this.foe.names} מגיעים. אתה לבד!`);
+    this.ui_banner('300', `כל ה${this.foe.names.replace('ה', '')} בבת אחת. אתה לבד!`);
     this.hint('כל 75 שתביסו - כוח חדש. בסוף מחכה הפרס!', 6);
   }
+  /** all 300 at once: the whole horde fills the sky (sprites baked from the real models, one per kind) */
+  makeHorde() {
+    this.hordeAtlas = this.hordeAtlas || {};
+    const atlas = this.hordeAtlas[this.foe.key] || (this.hordeAtlas[this.foe.key] = bakeHorde(this.renderer, this.foe));
+    const roles = []; for (let i = 0; i < PRIZE_TOTAL; i++) roles.push(prizeRole(i));
+    this.horde = new Horde(this, roles, atlas);
+    this.sfx(this.foe.key === 'angel' ? 'wing_flap_feather' : 'wing_flap_leather', null, null, { vol: 1 });
+    this.after(.9, () => this.sfx(this.foe.bossRoar, null, null, { vol: .7 }));
+  }
   prizeUpdate(dt) {
+    if (this.horde) this.horde.update(dt);
     if (this.trophy) this.trophy.update(dt);
-    if (this.state !== 'battle' || this.prizeDone) return;
+    if (this.state !== 'battle' || this.prizeDone || !this.horde) return;
     this.prizeT += dt;
-    const alive = this.enemies.filter(e => !e.dead && !e.summoned).length;
-    // every 75 down: the stream stops, the last ones fall, then you pick a power
-    if (this.prizeHold) { if (alive === 0 && this.prizeHold === 1) { this.prizeHold = 2; this.sfx('wave_clear', null, null, { vol: .8 }); this.after(1.2, () => this.offerUpgrades()); } this.hud(); return; }
-    const cap = Math.min(13, 5 + Math.floor(this.prizeKilled / 35)) - (this.lowEnd ? 3 : 0);
+    const alive = this.enemies.filter(e => !e.dead && !e.summoned).length, diving = this.horde.m.filter(m => m.state === 'dive').length;
+    // every 75 down: no one dives in, the last ones fall, then you pick a power
+    if (this.prizeHold) { if (alive === 0 && !diving && this.prizeHold === 1) { this.prizeHold = 2; this.sfx('wave_clear', null, null, { vol: .8 }); this.after(1.2, () => this.offerUpgrades()); } this.hud(); return; }
+    const cap = Math.min(14, 8 + Math.floor(this.prizeKilled / 50)) - (this.lowEnd ? 4 : 0);
     this.spawnT -= dt;
-    if (this.prizeSpawned < PRIZE_TOTAL && alive < cap && this.spawnT <= 0) {
-      this.spawnT = rnd(.35, .8);
-      const role = prizeRole(this.prizeSpawned);
-      // after the first 100 they come from both sides: you are surrounded
-      const behind = this.prizeSpawned >= 100 && Math.random() < .35 && role !== 'rival';
-      const o = behind ? { x: this.side.homeDir * (ARENA.x1 + 3), y: rnd(ARENA.y0 + 1, ARENA.y1 - 1) } : {};
-      const e = this.spawn(role, o); if (behind) e.vx = -this.side.homeDir * 8;
-      this.prizeSpawned++;
-      if (role === 'rival') { this.ui_banner('האלוף מגיע!', this.prizeSpawned >= PRIZE_TOTAL ? 'האחרון מכולם!' : `${this.foe.roles.rival.name} באמצע הדרך`); this.after(.5, () => this.sfx('rival_appear')); }
+    if (this.horde.next < PRIZE_TOTAL && alive + diving < cap && this.spawnT <= 0) {
+      this.spawnT = rnd(.25, .6);
+      this.horde.dive((x, y, role) => {
+        if (this.state !== 'battle' && this.state !== 'upgrade') return;
+        const e = this.spawn(role, { x, y, instant: true }); e.vx = -Math.sign(x) * 4;
+        if (role === 'rival') { this.ui_banner('האלוף מגיע!', this.horde.next >= PRIZE_TOTAL ? 'האחרון מכולם!' : `${this.foe.roles.rival.name} יצא מהצבא`); this.sfx('rival_appear'); }
+      });
+      this.prizeSpawned = this.horde.next;
     }
+    if (this.prizeKilled >= 100 && !this.surrounded) { this.surrounded = true; this.horde.surround(); this.ui_banner('הם מקיפים אותך!', 'מעכשיו הם באים מכל הצדדים'); this.sfx('rival_appear', null, null, { vol: .6 }); }
     this.hud();
   }
   /** one of the 300 is down */

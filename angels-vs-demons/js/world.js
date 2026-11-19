@@ -2,7 +2,7 @@
 // painted cloud layers, the sea of clouds below, floating Blender islands at several depths for parallax.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { Assets } from './assets.js?v=12';
+import { Assets } from './assets.js?v=13';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 export const ARENA = { x0: -12.5, x1: 12.5, y0: 1.4, y1: 8.8 }; // y1 stays under the top HUD
